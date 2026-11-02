@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Circuito Roma–Condesa</title>
+<title>Mexico City Urban Transformation</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -138,6 +138,12 @@ main{flex:1;display:flex;min-height:0;position:relative}
 .pop .ev{font-weight:600}
 .pop .meta{font-family:var(--font-data);font-size:11px;color:var(--muted)}
 .pop a{color:var(--accent)}
+/* Source attribution in the rail. Links carry the accent so they read as
+   links against the note-grey body text, in both themes. */
+.srclist{list-style:none;margin:0;padding:0;font-size:12px;line-height:1.5;color:var(--muted)}
+.srclist li{margin:0 0 5px}
+.srclist a{color:var(--accent);text-decoration:none;font-weight:500}
+.srclist a:hover{text-decoration:underline}
 
 /* ---------- table ---------- */
 #table-wrap{flex:1;min-width:0;overflow:auto;background:var(--surface)}
@@ -260,7 +266,7 @@ textarea{resize:vertical;font-family:var(--font-data);font-size:12px;line-height
 <header>
   <button class="btn" id="rail-toggle" aria-label="Toggle filters">☰</button>
   <div class="brand">
-    <h1>Circuito <span>Roma–Condesa</span></h1>
+    <h1>Mexico City <span>Urban Transformation</span></h1>
     <p id="scope">social event networks · CDMX</p>
   </div>
   <div class="seg" role="group" aria-label="View">
@@ -270,7 +276,6 @@ textarea{resize:vertical;font-family:var(--font-data);font-size:12px;line-height
   <div class="tools">
     <button class="btn" id="b-import">Import CSV</button>
     <button class="btn" id="b-reload" hidden>Reload sheet</button>
-    <button class="btn" id="b-geo">Geocode</button>
     <button class="btn" id="b-export">Export</button>
     <button class="btn" id="b-src">Data source</button>
     <button class="btn" id="b-help">?</button>
@@ -332,8 +337,8 @@ textarea{resize:vertical;font-family:var(--font-data);font-size:12px;line-height
         <select id="basemap">
           <option value="esri">Esri Light Gray</option>
           <option value="esriStreets">Esri Streets</option>
-          <option value="osm">OpenStreetMap *</option>
-          <option value="hot">OSM Humanitarian *</option>
+          <option value="osm">OpenStreetMap</option>
+          <option value="hot">OSM Humanitarian</option>
         </select>
       </label>
       <button class="btn" id="b-fit">Zoom to data</button>
@@ -355,10 +360,13 @@ textarea{resize:vertical;font-family:var(--font-data);font-size:12px;line-height
     </div>
 
     <div class="rail-sec">
-      <h2>Notes</h2>
-      <p class="note">* These basemaps reject requests with no referer header, so they only work when the file is served over <code>localhost</code> or a real domain — not opened straight from disk.</p>
-      <p class="note">Rows marked <code>example</code> in the source column are seed data — coordinates are approximate and the events are placeholders. Replace them with your own fieldwork and re-geocode from the address.</p>
-      <p class="note">Everything lives in this browser's local storage. Export before clearing site data or moving machines.</p>
+      <h2>Data provided by</h2>
+      <ul class="srclist">
+        <li><a href="https://insideairbnb.com/get-the-data/" target="_blank" rel="noopener">Inside Airbnb</a> — short-let listings</li>
+        <li><a href="https://www.inegi.org.mx/app/descarga/?ti=6" target="_blank" rel="noopener">INEGI DENUE</a> — business census, 2019 and 2025</li>
+        <li><a href="https://www.eventbrite.com/d/mexico--ciudad-de-mexico/eventos-cdmx/" target="_blank" rel="noopener">Eventbrite</a> — Ciudad de México</li>
+        <li><a href="https://www.meetup.com/find/?location=mx--M%C3%A9xico+City&amp;source=EVENTS" target="_blank" rel="noopener">Meetup</a> — Mexico City</li>
+      </ul>
       <p class="note" id="src-note" hidden></p>
       <button class="btn" id="b-reset">Reset to seed rows</button>
     </div>
@@ -1943,7 +1951,6 @@ function applyMode(){
   // it is one line of markup rather than a hunt through the wiring.
   var add = document.getElementById('b-add');
   if(add) add.textContent = connected ? (f ? 'Submit a venue' : 'Add in the sheet') : 'Add event';
-  document.getElementById('b-geo').textContent = connected ? 'Fill coords' : 'Geocode';
   document.getElementById('b-reset').hidden = connected;
   var src = document.getElementById('src-note');
   if(connected){
@@ -1990,7 +1997,6 @@ function helpPanel(){
       '<li><b>network</b> is the organizing unit you care about: the collective, host, club or scene that convenes the thing. That column is what the colors and the organizer ties are built from.</li>'+
       '<li><b>Organizer ties</b> draw each network\'s venues back to the network\'s own centroid. A tight star means a network that stays on a few blocks; a wide one means a network that circulates.</li>'+
       '<li><b>source</b> should carry provenance: a fieldnote date, an interview ID, or a URL. Keep it filled — it is the difference between a map and an assertion.</li>'+
-      '<li><b>Geocode</b> fills blank lat/lng from the address through OpenStreetMap\'s Nominatim, one row per second, biased to the CDMX bounding box. Verify anything ambiguous; a wrong rooftop is worse than a blank.</li>'+
       '<li><b>Private addresses.</b> House parties and members-only spaces are where a lot of this actually happens. Consider recording those at block or colonia level rather than door level, and keeping the precise coordinate out of anything you publish.</li>'+
       '<li><b>Sharing.</b> Sending someone this file alone sends an empty map — your rows are in your browser, not in the file. Use Export &rarr; <i>Publish standalone HTML</i>, which writes a copy with the data baked in, then upload that copy. Filter the map first if you want to publish only part of it, since publishing takes every row regardless of the current filters.</li>'+
     '</ul>'+
@@ -2033,7 +2039,6 @@ document.getElementById('b-src').addEventListener('click', sourcePanel);
 document.getElementById('b-reload').addEventListener('click', function(){
   refreshFromSheet(false).then(applyMode);
 });
-document.getElementById('b-geo').addEventListener('click', geocodeMissing);
 document.getElementById('b-reset').addEventListener('click', function(){
   rows = SEED.map(function(r){ return Object.assign({},r); });
   save(); renderNets(); render(); status('Reset to seed rows');
