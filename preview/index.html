@@ -1,0 +1,2335 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mexico City Urban Transformation</title>
+<meta name="description" content="Interactive map of Mexico City's urban transformation: Airbnb density, colonia-level commercial change from INEGI DENUE 2019–2025, coworking and co-living spaces, and venues hosting international-oriented events.">
+<!-- This page is embedded at maxbrichta.com; the canonical sends ranking
+     signals there rather than splitting them across two URLs. Update this
+     line if the Wix slug changes. -->
+<link rel="canonical" href="https://www.maxbrichta.com/cdmx-urban-tranformation">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Mexico City Urban Transformation">
+<meta property="og:description" content="Airbnb density, commercial change by colonia 2019–2025, and the venues hosting Mexico City's international event circuit.">
+<meta property="og:url" content="https://www.maxbrichta.com/cdmx-urban-tranformation">
+<!-- Add once a 1200x630 preview image exists in the repo:
+<meta property="og:image" content="https://maxbrichta.github.io/CDMX-event-network/preview.png"> -->
+<meta name="robots" content="noindex,nofollow">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: fixed header, left filter rail, map or data table fills the rest. */
+:root{
+  --bg:#F3F5F8; --surface:#FFFFFF; --surface-2:#EDF0F5;
+  --ink:#141821; --muted:#5B6474; --line:#D9DFE8;
+  --accent:#D81B60; --accent-ink:#FFFFFF;
+  --shadow:0 1px 2px rgba(20,24,33,.06),0 8px 24px rgba(20,24,33,.07);
+  --font-ui:'Archivo',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --font-data:'IBM Plex Mono',ui-monospace,'SF Mono',Menlo,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0E1118; --surface:#161B24; --surface-2:#1E2531;
+    --ink:#E7EBF2; --muted:#98A2B4; --line:#2A3240;
+    --accent:#FF5285; --accent-ink:#17060D;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.35);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0E1118; --surface:#161B24; --surface-2:#1E2531;
+  --ink:#E7EBF2; --muted:#98A2B4; --line:#2A3240;
+  --accent:#FF5285; --accent-ink:#17060D;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.35);
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{
+  background:var(--bg);color:var(--ink);
+  font-family:var(--font-ui);font-size:14px;line-height:1.45;
+  display:flex;flex-direction:column;overflow:hidden;
+}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* ---------- header ---------- */
+header{
+  display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+  padding:10px max(16px,env(safe-area-inset-right,0px)) 10px max(16px,env(safe-area-inset-left,0px));
+  background:var(--surface);border-bottom:1px solid var(--line);z-index:600;
+}
+.brand{display:flex;flex-direction:column;min-width:0;margin-right:auto}
+.brand h1{
+  margin:0;font-size:16px;font-weight:700;letter-spacing:-.01em;white-space:nowrap;
+}
+.brand h1 span{color:var(--accent)}
+.brand p{margin:0;font-family:var(--font-data);font-size:11px;color:var(--muted);white-space:nowrap}
+.tools{display:flex;gap:6px;flex-wrap:wrap}
+.btn{
+  background:var(--surface-2);border:1px solid var(--line);color:var(--ink);
+  border-radius:7px;padding:6px 11px;cursor:pointer;font-size:13px;font-weight:500;
+  white-space:nowrap;transition:background .12s,border-color .12s;
+}
+.btn:hover{background:var(--line)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.primary:hover{filter:brightness(1.08)}
+.seg{display:flex;border:1px solid var(--line);border-radius:7px;overflow:hidden}
+.seg button{background:var(--surface-2);border:0;padding:6px 12px;cursor:pointer;font-size:13px;font-weight:500}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+
+/* ---------- main ---------- */
+main{flex:1;display:flex;min-height:0;position:relative}
+#rail{
+  width:286px;flex:none;background:var(--surface);border-right:1px solid var(--line);
+  overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:18px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+}
+.rail-sec{display:flex;flex-direction:column;gap:9px;min-width:0}
+.rail-sec h2{
+  margin:0;font-family:var(--font-data);font-size:10px;font-weight:500;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--muted);
+}
+#q{
+  width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:7px;
+  background:var(--surface-2);
+}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stat{background:var(--surface-2);border-radius:8px;padding:8px 9px;min-width:0}
+.stat b{display:block;font-family:var(--font-data);font-size:19px;font-variant-numeric:tabular-nums;line-height:1.1}
+.stat span{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+
+.net{display:flex;align-items:center;gap:9px;padding:5px 6px;border-radius:6px;cursor:pointer;min-width:0}
+.net:hover{background:var(--surface-2)}
+.net input{accent-color:var(--accent);margin:0;flex:none}
+.dot{width:11px;height:11px;border-radius:50%;flex:none;border:1px solid rgba(0,0,0,.18)}
+.net .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.net .ct{font-family:var(--font-data);font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
+.net.off{opacity:.42}
+
+.days{display:flex;gap:4px;flex-wrap:wrap}
+.day{
+  border:1px solid var(--line);background:var(--surface-2);border-radius:6px;
+  padding:5px 0;cursor:pointer;width:34px;text-align:center;
+  font-family:var(--font-data);font-size:11px;
+}
+.day[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.bars{display:flex;align-items:flex-end;gap:4px;height:46px;margin-top:2px}
+.bar{flex:1;background:var(--accent);border-radius:2px 2px 0 0;min-height:2px;opacity:.75}
+.barlab{display:flex;gap:4px;font-family:var(--font-data);font-size:9.5px;color:var(--muted)}
+.barlab span{flex:1;text-align:center}
+
+.toggle{display:flex;align-items:center;gap:9px;cursor:pointer;padding:3px 0}
+.toggle input{accent-color:var(--accent);margin:0}
+.note{font-size:11.5px;color:var(--muted);line-height:1.5}
+
+/* ---------- map ---------- */
+#map{flex:1;min-width:0;background:var(--surface-2)}
+.leaflet-container{font-family:var(--font-ui);background:var(--surface-2)}
+.shape-marker{background:none;border:none}
+#shapelegend{display:flex;flex-direction:column;gap:2px;margin-top:2px}
+#shapelegend svg{display:block}
+/* No keyless provider ships a dark basemap, so darken the tiles themselves.
+   Only the tile pane is filtered; markers and ties keep their real colors. */
+#map.dark-tiles .leaflet-tile-pane{filter:invert(1) hue-rotate(180deg) brightness(.9) contrast(.88) saturate(.7)}
+.leaflet-popup-content-wrapper{
+  background:var(--surface);color:var(--ink);border-radius:10px;box-shadow:var(--shadow);
+}
+.leaflet-popup-tip{background:var(--surface)}
+.leaflet-popup-content{margin:12px 14px;font-size:13px;line-height:1.5;max-height:46vh;overflow:auto}
+.leaflet-popup-close-button{color:var(--muted)!important}
+.pop h3{margin:0 0 2px;font-size:14.5px}
+.pop .addr{font-size:11.5px;color:var(--muted);margin-bottom:9px;font-family:var(--font-data)}
+.pop ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.pop li{border-left:3px solid var(--ev);padding-left:9px}
+.pop .ev{font-weight:600}
+.pop .meta{font-family:var(--font-data);font-size:11px;color:var(--muted)}
+.pop a{color:var(--accent)}
+/* Source attribution in the rail. Links carry the accent so they read as
+   links against the note-grey body text, in both themes. */
+.srclist{list-style:none;margin:0;padding:0;font-size:12px;line-height:1.5;color:var(--muted)}
+.srclist li{margin:0 0 5px}
+.srclist a{color:var(--accent);text-decoration:none;font-weight:500}
+.srclist a:hover{text-decoration:underline}
+
+/* ---------- table ---------- */
+#table-wrap{flex:1;min-width:0;overflow:auto;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:12.5px}
+th,td{border-bottom:1px solid var(--line);padding:6px 9px;text-align:left;vertical-align:top}
+th{
+  position:sticky;top:0;background:var(--surface-2);z-index:2;
+  font-family:var(--font-data);font-size:10px;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--muted);font-weight:500;white-space:nowrap;
+}
+td[contenteditable]{min-width:88px;cursor:text}
+td[contenteditable]:focus{background:var(--surface-2);outline:2px solid var(--accent);outline-offset:-2px}
+td.num{font-family:var(--font-data);font-variant-numeric:tabular-nums;white-space:nowrap}
+.del{
+  background:none;border:0;color:var(--muted);cursor:pointer;font-size:15px;line-height:1;padding:2px 5px;
+}
+.del:hover{color:var(--accent)}
+.swatch{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px}
+
+/* ---------- panels ---------- */
+.scrim{
+  position:fixed;inset:0;background:rgba(10,13,20,.5);z-index:900;
+  display:flex;align-items:center;justify-content:center;padding:18px;
+}
+.panel{
+  background:var(--surface);border-radius:12px;box-shadow:var(--shadow);
+  width:min(560px,100%);max-height:86vh;overflow:auto;padding:20px;
+}
+.panel h2{margin:0 0 4px;font-size:17px}
+.panel .sub{margin:0 0 16px;font-size:12.5px;color:var(--muted)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+label.fld{display:flex;flex-direction:column;gap:4px;font-size:11px;color:var(--muted);min-width:0}
+label.fld input,label.fld select,label.fld textarea{
+  padding:7px 9px;border:1px solid var(--line);border-radius:6px;background:var(--surface-2);
+  font-size:13px;width:100%;
+}
+textarea{resize:vertical;font-family:var(--font-data);font-size:12px;line-height:1.5}
+.panel .row-end{display:flex;gap:8px;justify-content:flex-end;margin-top:16px;flex-wrap:wrap}
+.panel code{font-family:var(--font-data);font-size:11.5px;background:var(--surface-2);padding:1px 5px;border-radius:4px}
+.panel ul.guide{padding-left:18px;margin:8px 0;font-size:13px;line-height:1.6}
+#tilewarn{
+  position:absolute;top:12px;left:50%;transform:translateX(-50%);z-index:700;
+  background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--accent);
+  border-radius:9px;padding:11px 14px;max-width:min(540px,90%);box-shadow:var(--shadow);
+  font-size:12.5px;line-height:1.55;
+}
+#tilewarn b{display:block;margin-bottom:3px;font-size:13px}
+#tilewarn code{font-family:var(--font-data);font-size:11.5px;background:var(--surface-2);padding:1px 5px;border-radius:4px}
+#tilewarn .row-end{display:flex;gap:7px;margin-top:9px;flex-wrap:wrap}
+#status{
+  position:absolute;left:50%;bottom:20px;transform:translateX(-50%);
+  background:var(--ink);color:var(--bg);padding:8px 15px;border-radius:999px;
+  font-size:12.5px;z-index:700;box-shadow:var(--shadow);max-width:84%;text-align:center;
+}
+#rail-toggle{display:none}
+
+@media (max-width:820px){
+  #rail-toggle{display:inline-block}
+  #rail{
+    position:absolute;inset:0 auto 0 0;z-index:650;width:min(300px,86%);
+    box-shadow:var(--shadow);
+  }
+  #rail[hidden]{display:none!important}
+  .brand p{display:none}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* ---------- pinned colour key ---------- */
+/* The marker colours are the map's primary encoding, and the filter group
+   that carries their swatches can sit far down a long rail. This repeats the
+   key at the top so the map is never unexplained on load. */
+#colorkey{margin-top:10px}
+#colorkey .lgd-t{font-family:var(--font-data);font-size:10px;letter-spacing:.07em;
+  text-transform:uppercase;color:var(--muted);margin-bottom:5px}
+#colorkey .ck{display:flex;flex-wrap:wrap;gap:4px 10px}
+#colorkey .ck span{display:inline-flex;align-items:center;gap:5px;
+  font-size:11.5px;color:var(--ink)}
+#colorkey .ck i{width:9px;height:9px;border-radius:50%;display:inline-block;flex:none}
+#colorkey .more{color:var(--muted)}
+
+/* ---------- venue clusters ---------- */
+/* The plugin's default blue-green blobs would fight the choropleth beneath
+   them, so clusters are drawn in the page's own accent instead. */
+.vclus{background:transparent}
+.vclus div{
+  width:100%;height:100%;border-radius:50%;display:flex;align-items:center;
+  justify-content:center;font-family:var(--font-ui);font-weight:600;
+  color:var(--accent-ink);background:var(--accent);opacity:.9;
+  border:1.5px solid var(--surface);box-shadow:0 1px 4px rgba(20,24,33,.3);
+}
+/* Kept small and slightly translucent: a cluster is a count, not the subject.
+   At full size and opacity two dozen of them hide the choropleth they sit on. */
+.vclus.s div{font-size:10.5px}
+.vclus.m div{font-size:11.5px}
+.vclus.l div{font-size:13px}
+.leaflet-cluster-anim .leaflet-marker-icon,
+.leaflet-cluster-anim .leaflet-marker-shadow{transition:transform .2s ease-out,opacity .2s ease-in}
+
+/* ---------- short-let density layer ---------- */
+#ab-legend{margin-top:7px}
+#ab-legend .lgd-t{font-family:var(--font-data);font-size:10px;letter-spacing:.07em;
+  text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+.ab-row{display:flex;align-items:center;gap:7px;margin:2.5px 0;font-size:11.5px;color:var(--ink)}
+.ab-sw{width:20px;height:11px;border-radius:2px;flex:none;
+  border:1px solid rgba(20,24,33,.16);box-shadow:0 0 0 1px rgba(255,255,255,.35) inset}
+.ab-sw.none{background:transparent;border-style:dashed;box-shadow:none}
+.pop .abt{width:100%;border-collapse:collapse;margin:2px 0 0}
+.pop .abt th,.pop .abt td{border:0;border-bottom:1px solid var(--line);padding:3px 0;font-size:12px}
+.pop .abt th{text-align:left;font-weight:400;color:var(--muted);white-space:nowrap;
+  text-transform:none;letter-spacing:0;font-family:inherit;font-size:12px;
+  position:static;background:none}
+.pop .abt td{text-align:right;font-family:var(--font-data);font-variant-numeric:tabular-nums;
+  white-space:nowrap;padding-left:10px}
+.pop .abt tr:last-child th,.pop .abt tr:last-child td{border-bottom:0}
+.pop .abnote{font-size:11px;color:var(--muted);margin-top:7px;line-height:1.45}
+</style>
+</head>
+<body>
+
+<header>
+  <button class="btn" id="rail-toggle" aria-label="Toggle filters">☰</button>
+  <div class="brand">
+    <h1>Mexico City <span>Urban Transformation</span></h1>
+    <p id="scope">social event networks · CDMX</p>
+  </div>
+  <div class="seg" role="group" aria-label="View">
+    <button id="v-map" aria-pressed="true">Map</button>
+    <button id="v-tab" aria-pressed="false">Data</button>
+  </div>
+  <div class="tools">
+    <button class="btn" id="b-import">Import CSV</button>
+    <button class="btn" id="b-reload" hidden>Reload sheet</button>
+    <button class="btn" id="b-export">Export</button>
+    <button class="btn" id="b-src">Data source</button>
+    <button class="btn" id="b-help">?</button>
+    <button class="btn" id="b-theme" aria-label="Toggle theme">◐</button>
+  </div>
+</header>
+
+<main>
+  <aside id="rail">
+    <div class="rail-sec">
+      <h2>Search</h2>
+      <input id="q" type="search" placeholder="venue, event, organizer, note…">
+      <div class="stats">
+        <div class="stat"><b id="s-ven">0</b><span>Venues</span></div>
+        <div class="stat"><b id="s-ev">0</b><span>Entries</span></div>
+        <div class="stat"><b id="s-net">0</b><span>Networks</span></div>
+      </div>
+      <div id="colorkey" hidden></div>
+    </div>
+
+    <div class="rail-sec">
+      <h2>Networks</h2>
+      <div id="nets"></div>
+      <button class="btn" id="n-more" hidden></button>
+      <div style="display:flex;gap:6px">
+        <button class="btn" id="n-all" style="flex:1">All</button>
+        <button class="btn" id="n-none" style="flex:1">None</button>
+      </div>
+    </div>
+
+    <div id="extras"></div>
+
+    <div class="rail-sec">
+      <h2>Weekly rhythm</h2>
+      <div class="bars" id="bars"></div>
+      <div class="barlab"><span>L</span><span>M</span><span>M</span><span>J</span><span>V</span><span>S</span><span>D</span></div>
+      <div class="days" id="days"></div>
+    </div>
+
+    <div class="rail-sec">
+      <h2>Display</h2>
+      <label class="toggle"><input type="checkbox" id="t-ties"> Draw organizer ties</label>
+      <label class="toggle"><input type="checkbox" id="t-size" checked> Size venues by event count</label>
+      <label class="toggle"><input type="checkbox" id="t-lab"> Always show venue labels</label>
+      <label class="fld" style="margin-top:4px">Sort the filter lists
+        <select id="sortfilters">
+          <option value="az">A – Z</option>
+          <option value="count">most entries first</option>
+        </select>
+      </label>
+      <label class="fld" style="margin-top:4px">Colour the map by
+        <select id="colorby"><option value="network">network</option></select>
+      </label>
+      <label class="fld" style="margin-top:4px">Marker shape by
+        <select id="shapeby"><option value="">(all circles)</option></select>
+      </label>
+      <div id="shapelegend" hidden></div>
+      <label class="fld" style="margin-top:4px">Basemap
+        <select id="basemap">
+          <option value="esri">Esri Light Gray</option>
+          <option value="esriStreets">Esri Streets</option>
+          <option value="osm">OpenStreetMap</option>
+          <option value="hot">OSM Humanitarian</option>
+        </select>
+      </label>
+      <button class="btn" id="b-fit">Zoom to data</button>
+    </div>
+
+    <div class="rail-sec">
+      <h2>Colonia shading</h2>
+      <label class="fld">Dataset
+        <select id="ab-layer">
+          <option value="">(none)</option>
+          <option value="airbnb">Airbnb short-lets</option>
+          <option value="commerce">Commerce — DENUE</option>
+          <option value="catastro">Property &amp; construction — catastro</option>
+        </select>
+      </label>
+      <label class="fld" style="margin-top:4px" id="ab-metric-wrap" hidden>Measure
+        <select id="ab-metric"></select>
+      </label>
+      <div id="ab-vintage-wrap" hidden style="margin-top:8px">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;font-size:11px;color:var(--muted)">
+          <span>DENUE release</span>
+          <span id="ab-vintage-label" style="font-size:13px;color:var(--ink);font-weight:600">May 2025</span>
+        </div>
+        <input type="range" id="ab-vintage" min="0" max="4" step="1" value="4"
+               aria-label="DENUE release" style="width:100%;margin:4px 0 0">
+        <div id="ab-vintage-ticks"></div>
+        <div id="ab-vintage-note" hidden style="margin-top:7px;padding:6px 8px;border-left:2px solid var(--accent);background:var(--surface-2);font-size:11px;color:var(--ink);line-height:1.45">Baseline
+          release. Change measures read zero everywhere by definition, so the map shades flat.
+          Switch Measure to a level — cafés or businesses per km² — to read Nov 2019 on its own.</div>
+        <div style="margin-top:6px;font-size:11px;color:var(--muted);line-height:1.45">Compared
+          against Nov 2019. Breaks stay fixed across releases. INEGI did not substantially
+          re-canvass Mexico City between 2021 and 2023, so Nov 2023 stands in for that span.</div>
+      </div>
+      <div id="ab-legend" hidden></div>
+    </div>
+
+    <div class="rail-sec">
+      <h2>Data provided by</h2>
+      <ul class="srclist">
+        <li><a href="https://insideairbnb.com/get-the-data/" target="_blank" rel="noopener">Inside Airbnb</a> — short-let listings</li>
+        <li><a href="https://www.inegi.org.mx/app/descarga/?ti=6" target="_blank" rel="noopener">INEGI DENUE</a> — business census, 2019 and 2025</li>
+        <li><a href="https://www.eventbrite.com/d/mexico--ciudad-de-mexico/eventos-cdmx/" target="_blank" rel="noopener">Eventbrite</a> — Ciudad de México</li>
+        <li><a href="https://www.meetup.com/find/?location=mx--M%C3%A9xico+City&amp;source=EVENTS" target="_blank" rel="noopener">Meetup</a> — Mexico City</li>
+      </ul>
+      <p class="note" id="src-note" hidden></p>
+      <button class="btn" id="b-reset">Reset to seed rows</button>
+    </div>
+  </aside>
+
+  <div id="map"></div>
+  <div id="table-wrap" hidden></div>
+  <div id="tilewarn" hidden></div>
+  <div id="status" hidden></div>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/leaflet.markercluster.js"></script>
+<script src="../map-payload.js"></script>
+<script>
+(function(){
+'use strict';
+
+/* ---------------------------------------------------------------
+   DATA MODEL
+   One row = one event (a recurring series counts as one row).
+   Several rows can share a venue; that is what makes a venue a hub.
+----------------------------------------------------------------*/
+var COLS = ['venue','address','colonia','lat','lng','network','event','day','time','cadence','access','source','notes'];
+var DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+var STORE = 'circuito-rc-v1';
+/* Bumped automatically whenever you publish a standalone copy. Viewers whose
+   stored stamp doesn't match get the newly published rows instead of a stale cache. */
+var SEED_STAMP = 'working-copy';
+
+/* ---------------------------------------------------------------
+   SHARED DATA SOURCE
+   When a published-sheet CSV URL is set, the sheet is the source of
+   truth: the map reads it on every load, so collaborators' entries
+   appear without anyone republishing the file. Both URLs are baked
+   into the published copy, so the hosted map stays connected.
+----------------------------------------------------------------*/
+var SHEET_URL = 'https://docs.google.com/spreadsheets/d/1cTsBNs9sIFO3AXHJUwVcVkaPlXgH3vdA8RGgpg6sDXM/edit?gid=1960038550#gid=1960038550';   // published Google Sheet, CSV output
+var FORM_URL  = '';   // Google Form collaborators submit through
+
+function sheetUrl(){
+  try{ var v = localStorage.getItem(STORE+'-sheet'); if(v!==null) return v; }catch(e){}
+  return SHEET_URL;
+}
+function formUrl(){
+  try{ var v = localStorage.getItem(STORE+'-form'); if(v!==null) return v; }catch(e){}
+  return FORM_URL;
+}
+var sheetMode = false;
+var sheetFetchedAt = null;
+
+/* Google Form question titles become the sheet's headers, and nobody types
+   them exactly. Match loosely, in both languages, and ignore the rest. */
+var HEADER_ALIASES = {
+  venue:   ['venue','lugar','sede','espacio','place','nombre del lugar','nombre','site'],
+  address: ['address','direccion','calle','domicilio','ubicacion'],
+  colonia: ['colonia','neighborhood','neighbourhood','barrio','zona'],
+  lat:     ['lat','latitude','latitud'],
+  lng:     ['lng','lon','long','longitude','longitud'],
+  network: ['network','organizer','organiser','organizador','colectivo','collective','red','host','grupo','quien organiza'],
+  event:   ['event','evento','actividad','nombre del evento','event name'],
+  day:     ['day','dia','day of week','dia de la semana'],
+  time:    ['time','hora','start time','hora de inicio'],
+  cadence: ['cadence','frequency','frecuencia','periodicidad','cada cuando'],
+  access:  ['access','acceso','entry','entrada'],
+  source:  ['source','fuente','link','url','referencia'],
+  notes:   ['notes','notas','comments','comentarios','observaciones']
+};
+var APPROVED_ALIASES = ['approved','aprobado','publish','publicar','status','estado','revisado','ok'];
+
+function normKey(s){
+  return String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'')
+    .toLowerCase().replace(/[^a-z0-9 ]/g,' ').replace(/\s+/g,' ').trim();
+}
+function matchHeaderExact(h){
+  var n = normKey(h);
+  if(!n) return null;
+  for(var col in HEADER_ALIASES){
+    if(HEADER_ALIASES[col].indexOf(n) >= 0) return col;
+  }
+  return null;
+}
+function matchHeaderLoose(h){
+  var n = normKey(h);
+  if(!n) return null;
+  for(var col in HEADER_ALIASES){
+    var al = HEADER_ALIASES[col];
+    for(var j=0;j<al.length;j++){
+      if(n.indexOf(al[j]) >= 0) return col;
+    }
+  }
+  return null;
+}
+function matchHeader(h){ return matchHeaderExact(h) || matchHeaderLoose(h); }
+function isApprovedHeader(h){
+  var n = normKey(h);
+  return APPROVED_ALIASES.indexOf(n)>=0;
+}
+function approvedValue(v){
+  var n = normKey(v);
+  if(n==='') return false;
+  return ['yes','y','true','1','si','x','ok','approved','aprobado','publicado','listo','done'].indexOf(n)>=0;
+}
+
+/* Accept whatever URL the user pastes and turn it into one a browser can
+   actually fetch. The /export?format=csv endpoint redirects to a host with
+   no CORS headers, so it is rewritten to the gviz endpoint instead. */
+function normalizeSheetUrl(u){
+  u = String(u||'').trim();
+  if(!u) return '';
+  if(/\/spreadsheets\/d\/e\//.test(u)){            // already a published-to-web link
+    if(!/output=csv/.test(u)) u += (u.indexOf('?')<0?'?':'&') + 'output=csv';
+    return u;
+  }
+  var m = u.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+  if(m){
+    var gid = (u.match(/[#&?]gid=([0-9]+)/)||[])[1];
+    return 'https://docs.google.com/spreadsheets/d/'+m[1]+'/gviz/tq?tqx=out:csv'+(gid?'&gid='+gid:'');
+  }
+  return u;
+}
+
+var SEED = [
+  {venue:'Parque México',address:'Av. México s/n, Hipódromo',colonia:'Hipódromo',lat:19.4114,lng:-99.1716,network:'Run clubs',event:'Weekday morning run (example)',day:'Tue',time:'07:00',cadence:'weekly',access:'open',source:'example',notes:'Seed row — replace with observed data.'},
+  {venue:'Parque México',address:'Av. México s/n, Hipódromo',colonia:'Hipódromo',lat:19.4114,lng:-99.1716,network:'Language exchange',event:'Intercambio in the park (example)',day:'Sat',time:'11:00',cadence:'weekly',access:'open',source:'example',notes:'Seed row — replace with observed data.'},
+  {venue:'Parque España',address:'Av. Veracruz s/n, Condesa',colonia:'Condesa',lat:19.4161,lng:-99.1724,network:'Run clubs',event:'Evening social run (example)',day:'Thu',time:'19:30',cadence:'weekly',access:'open',source:'example',notes:'Seed row — replace with observed data.'},
+  {venue:'Blend Station',address:'Av. Tamaulipas 60, Condesa',colonia:'Condesa',lat:19.4125,lng:-99.1744,network:'Coworking / remote work',event:'Laptop-hours cowork (example)',day:'Wed',time:'10:00',cadence:'weekly',access:'open',source:'example',notes:'Seed row — replace with observed data.'},
+  {venue:'Mercado Roma',address:'Querétaro 225, Roma Norte',colonia:'Roma Norte',lat:19.4113,lng:-99.1615,network:'Founders / startup',event:'Founder meetup (example)',day:'Thu',time:'19:00',cadence:'monthly',access:'rsvp',source:'example',notes:'Seed row — replace with observed data.'},
+  {venue:'Cine Tonalá',address:'Tonalá 261, Roma Sur',colonia:'Roma Sur',lat:19.4075,lng:-99.1600,network:'Arts / film',event:'Screening + party (example)',day:'Fri',time:'21:00',cadence:'weekly',access:'paid',source:'example',notes:'Seed row — replace with observed data.'},
+  {venue:'Huerto Roma Verde',address:'Jalapa 234, Roma Sur',colonia:'Roma Sur',lat:19.4060,lng:-99.1600,network:'Wellness / community',event:'Weekend taller (example)',day:'Sun',time:'10:00',cadence:'weekly',access:'open',source:'example',notes:'Seed row — replace with observed data.'},
+  {venue:'Plaza Río de Janeiro',address:'Plaza Río de Janeiro, Roma Norte',colonia:'Roma Norte',lat:19.4194,lng:-99.1628,network:'Language exchange',event:'Park intercambio (example)',day:'Wed',time:'18:00',cadence:'weekly',access:'open',source:'example',notes:'Seed row — replace with observed data.'},
+  {venue:'Centro Cultural Bella Época',address:'Av. Tamaulipas 202, Condesa',colonia:'Condesa',lat:19.4087,lng:-99.1754,network:'Arts / film',event:'Book presentation (example)',day:'Tue',time:'19:00',cadence:'monthly',access:'open',source:'example',notes:'Seed row — replace with observed data.'},
+  {venue:'Parque Luis Cabrera',address:'Plaza Luis Cabrera, Roma Norte',colonia:'Roma Norte',lat:19.4130,lng:-99.1595,network:'Run clubs',event:'Saturday long run start (example)',day:'Sat',time:'08:00',cadence:'weekly',access:'open',source:'example',notes:'Seed row — replace with observed data.'}
+];
+
+var PALETTE = ['#D81B60','#2D7DD2','#E8A33D','#2F9E6E','#8A5CF5','#D9544D','#15A8A0','#A6743B','#5C7CFA','#C2185B'];
+
+var rows = [];
+var netColor = {};
+var ui = {
+  /* colorBy is what the map is actually using right now; colorByWant is what
+     it should use as soon as that column exists. They differ during boot:
+     the baked seed rows carry no 'layer' column, so the first paint has to
+     fall back to 'network', and the sheet supplies 'layer' a moment later.
+     Keeping the wish separate is what lets the default land then. */
+  q:'', offNets:{}, offDays:{}, offExtras:{},
+  colorBy:'layer', colorByWant:'layer', shapeBy:'', sortFilters:'az',
+  ties:false, size:true, labels:false, view:'map'
+};
+
+/* ---------------------------------------------------------------
+   USER-ADDED COLUMNS
+   Any sheet column the map doesn't recognise is kept on the row under
+   _x and turned into its own filter group, provided it reads like a
+   category rather than free text. Cells may hold several values
+   separated by commas or semicolons.
+----------------------------------------------------------------*/
+var EXTRA_MAX_VALUES = 24;
+
+function extraValues(r, field){
+  var v = (r._x && r._x[field]) || '';
+  if(!String(v).trim()) return [];
+  return String(v).split(/[;,/|]/).map(function(s){ return s.trim(); })
+    .filter(function(s){ return s.length > 0; });
+}
+/* Returns {field: [value, …]} for every extra column shaped like a category. */
+function extraFields(){
+  var seen = {};
+  rows.forEach(function(r){
+    if(!r._x) return;
+    for(var f in r._x){
+      if(!seen[f]) seen[f] = {};
+      extraValues(r, f).forEach(function(v){ seen[f][v] = (seen[f][v]||0) + 1; });
+    }
+  });
+  var out = {};
+  Object.keys(seen).forEach(function(f){
+    var vals = Object.keys(seen[f]);
+    if(vals.length === 0 || vals.length > EXTRA_MAX_VALUES) return;  // free text
+    // A–Z reads like an index; by-count puts the busiest categories on top.
+    if(ui.sortFilters === 'count'){
+      vals.sort(function(a,b){ return seen[f][b] - seen[f][a] || a.localeCompare(b,'es'); });
+    } else {
+      vals.sort(function(a,b){ return a.localeCompare(b,'es'); });
+    }
+    out[f] = vals;
+  });
+  return out;
+}
+function extraCounts(field){
+  var c = {};
+  rows.forEach(function(r){
+    extraValues(r, field).forEach(function(v){ c[v] = (c[v]||0) + 1; });
+  });
+  return c;
+}
+
+/* ---------------------------------------------------------------
+   STORAGE
+----------------------------------------------------------------*/
+function load(){
+  try{
+    var raw = localStorage.getItem(STORE);
+    if(raw){
+      var o = JSON.parse(raw);
+      if(Array.isArray(o)){ rows = o; return; }                       // older format
+      if(o && o.stamp === SEED_STAMP && Array.isArray(o.rows)){ rows = o.rows; return; }
+      // Stamp mismatch means this copy was published with newer data — take it.
+    }
+  }catch(e){}
+  rows = SEED.map(function(r){ return Object.assign({}, r); });
+}
+function save(){
+  if(sheetMode) return;   // the sheet owns the data; don't cache a divergent copy
+  try{ localStorage.setItem(STORE, JSON.stringify({stamp:SEED_STAMP, rows:rows})); }catch(e){}
+}
+
+/* ---------------------------------------------------------------
+   READING THE SHEET
+----------------------------------------------------------------*/
+/* Google serves published CSV through a redirect to a host that sends no
+   cross-origin header, so fetch() fails on links that work fine when clicked.
+   The gviz endpoint can be loaded through a script tag instead, which isn't
+   subject to that restriction at all — it just needs the sheet's real id. */
+function loadGvizViaScript(id, gid){
+  return new Promise(function(resolve, reject){
+    var s = document.createElement('script');
+    var done = false;
+    var timer = setTimeout(function(){ finish(new Error('timed out')); }, 20000);
+    function cleanup(){ if(s.parentNode) s.parentNode.removeChild(s); clearTimeout(timer); }
+    function finish(err, table){
+      if(done) return; done = true; cleanup();
+      err ? reject(err) : resolve(table);
+    }
+    window.google = window.google || {};
+    window.google.visualization = window.google.visualization || {};
+    window.google.visualization.Query = window.google.visualization.Query || {};
+    window.google.visualization.Query.setResponse = function(resp){
+      if(resp && resp.status === 'error'){
+        var d = resp.errors && resp.errors[0];
+        finish(new Error(d ? (d.detailed_message || d.message) : 'sheet refused the request'));
+        return;
+      }
+      finish(null, resp && resp.table);
+    };
+    s.onerror = function(){ finish(new Error('could not reach the sheet')); };
+    s.src = 'https://docs.google.com/spreadsheets/d/' + id +
+      '/gviz/tq?tqx=out:json&headers=1' + (gid ? '&gid=' + gid : '') + '&cb=' + Date.now();
+    document.head.appendChild(s);
+  });
+}
+function gvizTableToGrid(t){
+  if(!t || !t.cols) throw new Error('unexpected response');
+  var labels = t.cols.map(function(c){ return String(c.label || '').trim(); });
+  var head = labels.map(function(l, i){ return l || String(t.cols[i].id || ''); });
+  var grid = [head];
+  (t.rows||[]).forEach(function(r){
+    grid.push((r.c||[]).map(function(c){
+      if(c == null) return '';
+      return String(c.f != null ? c.f : (c.v == null ? '' : c.v));
+    }));
+  });
+  // If gviz found no header row the labels come back blank, and the real
+  // header is sitting in what it treated as the first data row.
+  if(labels.join('') === '') grid.shift();
+  return grid;
+}
+async function fetchCsvGrid(url){
+  var res = await fetch(url + (url.indexOf('?')<0?'?':'&') + 'cb=' + Date.now(), {cache:'no-store'});
+  if(!res.ok) throw new Error('HTTP ' + res.status);
+  return parseCSV(await res.text());
+}
+
+async function refreshFromSheet(quiet){
+  var raw = sheetUrl();
+  if(!raw) return;
+  if(!quiet) status('Reading the sheet…', true);
+  var id  = (raw.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]{20,})/) || [])[1];
+  var gid = (raw.match(/[#&?]gid=([0-9]+)/) || [])[1];
+  try{
+    var grid = null, firstErr = null;
+    try{ grid = await fetchCsvGrid(normalizeSheetUrl(raw)); }
+    catch(e){ firstErr = e; }
+    if((!grid || grid.length < 2) && id){
+      try{ grid = gvizTableToGrid(await loadGvizViaScript(id, gid)); }
+      catch(e2){ if(!grid) firstErr = firstErr || e2; }
+    }
+    if(!grid) throw firstErr || new Error('could not read the sheet');
+    if(grid.length < 2) throw new Error('the sheet has a header row but no data');
+
+    var head = grid[0];
+    var map_ = {}, approvedAt = -1, taken = {};
+    head.forEach(function(h,i){                       // exact names win first
+      if(isApprovedHeader(h)){ approvedAt = i; taken[i] = 1; return; }
+      var col = matchHeaderExact(h);
+      if(col && map_[col]===undefined){ map_[col] = i; taken[i] = 1; }
+    });
+    head.forEach(function(h,i){                       // then loose matches
+      if(taken[i]) return;
+      var col = matchHeaderLoose(h);
+      if(col && map_[col]===undefined){ map_[col] = i; taken[i] = 1; }
+    });
+    // Anything still unclaimed is a column the user added themselves. Keep it:
+    // it becomes its own filter group in the sidebar.
+    var extraAt = {};
+    head.forEach(function(h,i){
+      if(taken[i]) return;
+      var label = String(h==null?'':h).trim();
+      if(label) extraAt[label] = i;
+    });
+    if(map_.venue===undefined && map_.event===undefined){
+      throw new Error('no venue or event column found');
+    }
+
+    var out = [];
+    grid.slice(1).forEach(function(g){
+      if(approvedAt>=0 && !approvedValue(g[approvedAt])) return;
+      var o = {};
+      COLS.forEach(function(c){
+        var i = map_[c];
+        o[c] = (i===undefined || g[i]==null) ? '' : String(g[i]).trim();
+      });
+      var x = {};
+      for(var label in extraAt){
+        var v = g[extraAt[label]];
+        x[label] = (v==null) ? '' : String(v).trim();
+      }
+      o._x = x;
+      if(!o.network) o.network = 'Unsorted';
+      if(o.venue || o.event) out.push(o);
+    });
+
+    rows = out;
+    sheetFetchedAt = new Date();
+    renderNets(); render();
+    if(!quiet) status('Loaded '+rows.length+' row'+(rows.length===1?'':'s')+' from the sheet.');
+    else status(null);
+    sheetBanner(null);
+  }catch(e){
+    sheetBanner(e.message||String(e));
+    if(!quiet) status(null);
+  }
+}
+
+function sheetBanner(err){
+  var el = document.getElementById('tilewarn');
+  if(!err) return;
+  el.innerHTML =
+    '<b>Couldn\'t read the sheet</b>'+
+    'The map is showing its built-in rows instead. Reason: <code>'+esc(err)+'</code>.<br>'+
+    'Paste the sheet\'s ordinary address — the <code>/edit</code> one from your browser bar — into '+
+    'Data source, and in the sheet click <b>Share</b> and set <b>General access</b> to '+
+    '<b>Anyone with the link &middot; Viewer</b>. That address contains the sheet\'s id, which lets '+
+    'the map read it a second way when the published link is blocked.'+
+    '<div class="row-end"><button class="btn primary" id="w-src">Data source</button>'+
+    '<button class="btn" id="w-x">Dismiss</button></div>';
+  el.hidden = false;
+  el.querySelector('#w-src').addEventListener('click', function(){ hideTileWarning(); sourcePanel(); });
+  el.querySelector('#w-x').addEventListener('click', hideTileWarning);
+}
+
+/* ---------------------------------------------------------------
+   MAP
+----------------------------------------------------------------*/
+/* maxZoom is declared on the map, not left to the tile layer: the cluster
+   plugin reads map.getMaxZoom() when it initialises and throws without it.
+   Basemaps that run out of tiles before 19 set maxNativeZoom instead, so
+   they upsample rather than going blank. */
+var map = L.map('map',{zoomControl:true, preferCanvas:false, maxZoom:19})
+  .setView([19.4135,-99.1680],14);
+
+/* Keyless basemaps only — no account, no API key, no billing.
+   If one of these ever starts demanding a key, switch to another in the rail. */
+var BASEMAPS = {
+  esri:{
+    name:'Esri Light Gray',
+    url:'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}',
+    maxZoom:16,
+    attr:'Tiles &copy; <a href="https://www.esri.com/">Esri</a>'
+  },
+  esriStreets:{
+    name:'Esri Streets',
+    url:'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
+    maxZoom:18,
+    attr:'Tiles &copy; <a href="https://www.esri.com/">Esri</a>'
+  },
+  osm:{
+    name:'OpenStreetMap',
+    url:'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+    maxZoom:19,
+    needsReferer:true,
+    attr:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+  },
+  hot:{
+    name:'OSM Humanitarian',
+    url:'https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png',
+    subdomains:'ab', maxZoom:19,
+    needsReferer:true,
+    attr:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors · tiles by <a href="https://www.hotosm.org/">HOT</a>, hosted by <a href="https://openstreetmap.fr/">OSM France</a>'
+  }
+};
+var FILE_MODE = (location.protocol === 'file:');
+/* v2 key: the old one was written on every load, so it holds a basemap nobody
+   picked. Starting a fresh key lets this default through and keeps the stored
+   value meaning "the reader chose this". */
+var BM_DEFAULT = 'osm';
+var bmKey = BM_DEFAULT;
+try{ bmKey = localStorage.getItem(STORE+'-basemap-v2') || BM_DEFAULT; }catch(e){}
+if(!BASEMAPS[bmKey]) bmKey = BM_DEFAULT;
+/* Opened straight from disk there is no Referer header, and the OSM servers
+   reject refererless requests outright. Don't start on one of those. */
+if(FILE_MODE && BASEMAPS[bmKey].needsReferer) bmKey = 'esri';
+
+var tiles = null;
+/* Venues cluster below zoom 16 and separate above it. Without this the
+   Roma-Condesa core is a single mass of overlapping dots — the one part of
+   the map the whole project is about. Falls back to a plain layer group if
+   the plugin fails to load, so a CDN hiccup degrades rather than breaks. */
+var CLUSTER_UNTIL = 16;
+var venueLayer = (typeof L.markerClusterGroup === 'function')
+  ? L.markerClusterGroup({
+      disableClusteringAtZoom: CLUSTER_UNTIL,
+      spiderfyOnMaxZoom: true,
+      showCoverageOnHover: false,   // its hull would fight the choropleth
+      maxClusterRadius: 48,
+      chunkedLoading: true,
+      iconCreateFunction: function(c){
+        var n = c.getChildCount();
+        var size = n < 10 ? 26 : (n < 50 ? 32 : 40);
+        var cls  = n < 10 ? 's'  : (n < 50 ? 'm'  : 'l');
+        return L.divIcon({html:'<div>'+n+'</div>', className:'vclus '+cls,
+                          iconSize:[size,size]});
+      }
+    }).addTo(map)
+  : L.layerGroup().addTo(map);
+var clusteringOn = (typeof L.markerClusterGroup === 'function');
+var tieLayer = L.layerGroup().addTo(map);
+
+function applyBasemap(){
+  var b = BASEMAPS[bmKey];
+  if(tiles) map.removeLayer(tiles);
+  var opts = {
+    maxZoom: 19,
+    maxNativeZoom: b.maxZoom || 19,   // Esri Light Gray stops at 16
+    attribution: b.attr,
+    referrerPolicy: 'strict-origin-when-cross-origin',
+    crossOrigin: true
+  };
+  if(b.subdomains) opts.subdomains = b.subdomains;
+  tiles = L.tileLayer(b.url, opts);
+  var flagged = false;
+  tiles.on('tileerror', function(){
+    if(flagged) return;
+    flagged = true;
+    tileWarning(b);
+  });
+  tiles.on('load', function(){ hideTileWarning(); });
+  tiles.addTo(map);
+  tiles.bringToBack();
+  /* Deliberately not saved here. This runs for the automatic file:// fallback
+     too, which would otherwise persist Esri as a preference and override the
+     default once the page is back on a real domain. Only an explicit pick
+     from the dropdown is stored. */
+}
+
+function hideTileWarning(){ document.getElementById('tilewarn').hidden = true; }
+
+function tileWarning(b){
+  var el = document.getElementById('tilewarn');
+  var body;
+  if(FILE_MODE && b.needsReferer){
+    body = '<b>'+esc(b.name)+' is refusing these tiles</b>'+
+      'Their servers now require a referer header, and a page opened straight from your '+
+      'Downloads folder doesn\'t send one. Either switch basemap, or serve this file over '+
+      '<code>localhost</code> — open a terminal in the folder, run '+
+      '<code>python3 -m http.server 8000</code>, then visit '+
+      '<code>localhost:8000</code> and click the file. Geocoding needs that too.';
+  } else if(FILE_MODE){
+    body = '<b>Tiles aren\'t loading</b>'+
+      'Try another basemap. If none work, serve the file over <code>localhost</code>: '+
+      'run <code>python3 -m http.server 8000</code> in this folder and open '+
+      '<code>localhost:8000</code>.';
+  } else {
+    body = '<b>'+esc(b.name)+' isn\'t returning tiles</b>'+
+      'The provider may have changed its terms or be rate-limiting you. Try another basemap.';
+  }
+  el.innerHTML = body +
+    '<div class="row-end">'+
+      (bmKey!=='esri' ? '<button class="btn primary" id="w-esri">Switch to Esri</button>' : '')+
+      '<button class="btn" id="w-x">Dismiss</button>'+
+    '</div>';
+  el.hidden = false;
+  var sw = el.querySelector('#w-esri');
+  if(sw) sw.addEventListener('click', function(){
+    bmKey = 'esri';
+    document.getElementById('basemap').value = 'esri';
+    hideTileWarning();
+    applyBasemap();
+  });
+  el.querySelector('#w-x').addEventListener('click', hideTileWarning);
+}
+function isDark(){
+  var t = document.documentElement.getAttribute('data-theme');
+  if(t==='dark') return true;
+  if(t==='light') return false;
+  return window.matchMedia('(prefers-color-scheme: dark)').matches;
+}
+function retile(){
+  document.getElementById('map').classList.toggle('dark-tiles', isDark());
+  // The basemap is inverted by a CSS filter but this SVG overlay is not,
+  // so the choropleth needs its other set of steps.
+  if(typeof abLayer !== 'undefined' && choroKey) drawChoro();
+}
+
+/* ---------------------------------------------------------------
+   DERIVED DATA
+----------------------------------------------------------------*/
+function networks(){
+  var seen = [];
+  rows.forEach(function(r){
+    var n = (r.network||'Unsorted').trim() || 'Unsorted';
+    if(seen.indexOf(n)<0) seen.push(n);
+  });
+  seen.sort(function(a,b){ return a.localeCompare(b,'es'); });
+  seen.forEach(function(n,i){ if(!netColor[n]) netColor[n] = PALETTE[i % PALETTE.length]; });
+  return seen;
+}
+
+/* Which column drives the colours. Defaults to network; any categorical
+   column the sheet adds can take over. */
+function colorKey(r){
+  if(ui.colorBy === 'network') return (r.network||'Unsorted').trim() || 'Unsorted';
+  var v = extraValues(r, ui.colorBy);
+  return v.length ? v[0] : 'Unsorted';
+}
+function colorDomain(){
+  var seen = [];
+  rows.forEach(function(r){
+    var k = colorKey(r);
+    if(seen.indexOf(k) < 0) seen.push(k);
+  });
+  seen.sort();
+  seen.forEach(function(k,i){ if(!netColor[k]) netColor[k] = PALETTE[i % PALETTE.length]; });
+  return seen;
+}
+function colorOf(n){ return netColor[(n||'Unsorted').trim()||'Unsorted'] || '#888'; }
+
+/* ---------------------------------------------------------------
+   SHAPE
+   Colour already carries one dimension (usually network), so a second
+   dimension — what kind of place this is: event, hostel, co-working —
+   is drawn as marker shape instead. Any categorical column can drive it.
+----------------------------------------------------------------*/
+var SHAPES = ['circle','square','triangle','diamond','pentagon','hexagon'];
+var shapeOf = {};
+
+function shapeKey(r){
+  if(!ui.shapeBy) return '';
+  var v = extraValues(r, ui.shapeBy);
+  return v.length ? v[0] : 'Unsorted';
+}
+function shapeDomain(){
+  if(!ui.shapeBy) return [];
+  var seen = [];
+  rows.forEach(function(r){
+    var k = shapeKey(r);
+    if(k && seen.indexOf(k) < 0) seen.push(k);
+  });
+  seen.sort();
+  seen.forEach(function(k,i){ shapeOf[k] = SHAPES[i % SHAPES.length]; });
+  return seen;
+}
+function shapeFor(k){ return shapeOf[k] || 'circle'; }
+
+/* An SVG marker of the given shape, sized like the circle it replaces. */
+function shapeSVG(shape, rad, fill){
+  var s = Math.ceil(rad*2) + 4, c = s/2, R = rad;
+  function poly(n, rot){
+    var pts = [];
+    for(var i=0;i<n;i++){
+      var a = rot + i*2*Math.PI/n;
+      pts.push((c + R*Math.cos(a)).toFixed(2) + ',' + (c + R*Math.sin(a)).toFixed(2));
+    }
+    return pts.join(' ');
+  }
+  var attr = 'fill="'+fill+'" fill-opacity="0.82" stroke="#ffffff" stroke-width="1.6" stroke-opacity="0.85"';
+  var body;
+  if(shape === 'square'){
+    var d = R*0.88;
+    body = '<rect x="'+(c-d)+'" y="'+(c-d)+'" width="'+(d*2)+'" height="'+(d*2)+'" rx="'+(R*0.18)+'" '+attr+'/>';
+  } else if(shape === 'triangle'){
+    body = '<polygon points="'+poly(3, -Math.PI/2)+'" '+attr+'/>';
+  } else if(shape === 'diamond'){
+    body = '<polygon points="'+poly(4, -Math.PI/2)+'" '+attr+'/>';
+  } else if(shape === 'pentagon'){
+    body = '<polygon points="'+poly(5, -Math.PI/2)+'" '+attr+'/>';
+  } else if(shape === 'hexagon'){
+    body = '<polygon points="'+poly(6, -Math.PI/2)+'" '+attr+'/>';
+  } else {
+    body = '<circle cx="'+c+'" cy="'+c+'" r="'+R+'" '+attr+'/>';
+  }
+  return {html:'<svg width="'+s+'" height="'+s+'" viewBox="0 0 '+s+' '+s+'">'+body+'</svg>', size:s};
+}
+
+function visible(){
+  var q = ui.q.toLowerCase().trim();
+  return rows.filter(function(r){
+    var n = (r.network||'Unsorted').trim()||'Unsorted';
+    if(ui.offNets[n]) return false;
+    var d = (r.day||'').trim();
+    if(d && ui.offDays[d]) return false;
+    // A row passes an extra filter if any of its values for that column is on.
+    // Rows with no value in that column are never hidden by it.
+    for(var f in ui.offExtras){
+      var vals = extraValues(r, f);
+      if(!vals.length) continue;
+      var anyOn = vals.some(function(v){ return !ui.offExtras[f][v]; });
+      if(!anyOn) return false;
+    }
+    if(!q) return true;
+    if(COLS.some(function(k){ return String(r[k]||'').toLowerCase().indexOf(q)>=0; })) return true;
+    return r._x && Object.keys(r._x).some(function(f){
+      return String(r._x[f]||'').toLowerCase().indexOf(q) >= 0;
+    });
+  });
+}
+function venues(list){
+  var m = {};
+  list.forEach(function(r){
+    if(!isFinite(parseFloat(r.lat)) || !isFinite(parseFloat(r.lng))) return;
+    var key = (r.venue||'(unnamed)').trim()+'|'+Number(r.lat).toFixed(5)+'|'+Number(r.lng).toFixed(5);
+    if(!m[key]) m[key] = {venue:(r.venue||'(unnamed)').trim(), address:r.address||'', colonia:r.colonia||'',
+                          lat:parseFloat(r.lat), lng:parseFloat(r.lng), events:[]};
+    m[key].events.push(r);
+  });
+  return Object.keys(m).map(function(k){ return m[k]; });
+}
+
+/* ---------------------------------------------------------------
+   RENDER: MAP
+----------------------------------------------------------------*/
+function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){
+  return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+
+function drawMap(){
+  venueLayer.clearLayers();
+  tieLayer.clearLayers();
+  var list = visible();
+  var vs = venues(list);
+
+  vs.forEach(function(v){
+    var n = v.events.length;
+    var r = ui.size ? Math.min(24, 7 + Math.sqrt(n)*4.2) : 8;
+    var top = {};
+    v.events.forEach(function(e){
+      var k = colorKey(e); top[k]=(top[k]||0)+1;
+    });
+    var domin = Object.keys(top).sort(function(a,b){return top[b]-top[a];})[0];
+
+    var mk;
+    if(ui.shapeBy){
+      // Shape carries the layer; colour still carries the colour-by column.
+      var sk = {};
+      v.events.forEach(function(e){ var k = shapeKey(e); if(k) sk[k]=(sk[k]||0)+1; });
+      var domShape = Object.keys(sk).sort(function(a,b){return sk[b]-sk[a];})[0];
+      var svg = shapeSVG(shapeFor(domShape), r, colorOf(domin));
+      mk = L.marker([v.lat,v.lng], {icon: L.divIcon({
+        html: svg.html, className: 'shape-marker',
+        iconSize: [svg.size, svg.size], iconAnchor: [svg.size/2, svg.size/2]
+      })});
+    } else {
+      mk = L.circleMarker([v.lat,v.lng],{
+        radius:r, color:'#ffffff', weight:1.6, opacity:.85,
+        fillColor:colorOf(domin), fillOpacity:.82
+      });
+    }
+
+    var html = '<div class="pop"><h3>'+esc(v.venue)+'</h3>'+
+      '<div class="addr">'+esc(v.address||'')+(v.colonia?' · '+esc(v.colonia):'')+'</div><ul>';
+    v.events.forEach(function(e){
+      var meta = [e.day,e.time,e.cadence,e.access].filter(Boolean).join(' · ');
+      var xtra = '';
+      if(e._x){
+        var parts = [];
+        Object.keys(e._x).forEach(function(f){
+          if(String(e._x[f]||'').trim()) parts.push(esc(f)+': '+esc(e._x[f]));
+        });
+        if(parts.length) xtra = '<div class="meta">'+parts.join(' · ')+'</div>';
+      }
+      html += '<li style="--ev:'+colorOf(colorKey(e))+'">'+
+        '<div class="ev">'+esc(e.event||'(untitled)')+'</div>'+
+        '<div class="meta">'+esc((e.network||'Unsorted'))+(meta?' — '+esc(meta):'')+'</div>'+
+        xtra+
+        (e.notes?'<div style="font-size:12px;margin-top:3px">'+esc(e.notes)+'</div>':'')+
+        (/^https?:\/\//.test(e.source||'')?'<div class="meta"><a href="'+esc(e.source)+'" target="_blank" rel="noopener">source ↗</a></div>'
+          :(e.source?'<div class="meta">source: '+esc(e.source)+'</div>':''))+
+        '</li>';
+    });
+    html += '</ul></div>';
+    mk.bindPopup(html,{maxWidth:320});
+
+    var unit = n===1 ? ' entry' : ' entries';
+    if(ui.labels){
+      mk.bindTooltip(v.venue,{permanent:true,direction:'top',
+        offset:[0, ui.shapeBy ? -2 : -r-2], className:'vlabel'});
+    }else{
+      mk.bindTooltip(v.venue+' · '+n+unit,{direction:'top',
+        offset:[0, ui.shapeBy ? -2 : -r-2]});
+    }
+    venueLayer.addLayer(mk);
+  });
+
+  if(ui.ties) drawTies(list);
+  renderStats(list, vs);
+}
+
+function drawTies(list){
+  var byNet = {};
+  list.forEach(function(r){
+    if(!isFinite(parseFloat(r.lat))||!isFinite(parseFloat(r.lng))) return;
+    var n = colorKey(r);
+    (byNet[n]=byNet[n]||[]).push([parseFloat(r.lat),parseFloat(r.lng)]);
+  });
+  Object.keys(byNet).forEach(function(n){
+    var pts = byNet[n];
+    if(pts.length<2) return;
+    var uniq = {};
+    pts.forEach(function(p){ uniq[p[0].toFixed(5)+','+p[1].toFixed(5)]=p; });
+    var up = Object.keys(uniq).map(function(k){ return uniq[k]; });
+    if(up.length<2) return;
+    var cx=0, cy=0;
+    up.forEach(function(p){ cx+=p[0]; cy+=p[1]; });
+    var c=[cx/up.length, cy/up.length];
+    up.forEach(function(p){
+      tieLayer.addLayer(L.polyline([c,p],{
+        color:colorOf(n), weight:1.6, opacity:.55, dashArray:'4 5', interactive:false
+      }));
+    });
+    tieLayer.addLayer(L.circleMarker(c,{
+      radius:4, color:colorOf(n), weight:2, fillColor:colorOf(n), fillOpacity:.25
+    }).bindTooltip(n+' — centroid of '+up.length+' venues',{direction:'top'}));
+  });
+}
+
+/* ---------------------------------------------------------------
+   RENDER: RAIL
+----------------------------------------------------------------*/
+var NET_CAP = 8;       // how many networks to show before "show all"
+var netsExpanded = false;
+
+/* The colours on the map come from whichever column colourBy names. Repeat
+   that key at the top of the rail: with 30+ networks the group holding the
+   swatches is far below the fold, which leaves the map's main encoding
+   unexplained exactly when someone first opens it. */
+function renderColorKey(){
+  var el = document.getElementById('colorkey');
+  if(!el) return;
+  var counts;
+  if(ui.colorBy === 'network'){
+    counts = {};
+    rows.forEach(function(r){
+      var n = (r.network||'').trim(); if(n) counts[n] = (counts[n]||0)+1;
+    });
+  } else {
+    counts = extraCounts(ui.colorBy);
+  }
+  var vals = Object.keys(counts).sort(function(a,b){
+    return counts[b]-counts[a] || a.localeCompare(b,'es');
+  });
+  if(!vals.length){ el.hidden = true; return; }
+  var show = vals.slice(0, 10);
+  var html = '<div class="lgd-t">Colour: '+esc(ui.colorBy)+'</div><div class="ck">';
+  show.forEach(function(v){
+    html += '<span><i style="background:'+colorOf(v)+'"></i>'+esc(v)+'</span>';
+  });
+  if(vals.length > show.length){
+    html += '<span class="more">+'+(vals.length-show.length)+' more</span>';
+  }
+  el.innerHTML = html + '</div>';
+  el.hidden = false;
+}
+
+function renderNets(){
+  /* "Unsorted" is the fallback label for rows with a blank network, not a
+     network anyone chose, so it gets no toggle. Clearing its off-state here
+     covers every route that could set it — including the None button, which
+     would otherwise hide those rows with no control left to bring them back. */
+  delete ui.offNets['Unsorted'];
+  resolveColorBy();   // before any swatch is drawn — see the note on that function
+  var nets = networks();
+  var counts = {};
+  rows.forEach(function(r){
+    var n=(r.network||'Unsorted').trim()||'Unsorted'; counts[n]=(counts[n]||0)+1;
+  });
+  var box = document.getElementById('nets');
+  box.innerHTML = '';
+  /* The list runs to 30+ entries, most with a count of 1, which pushes every
+     other control below the fold. Show the busiest few, ordered by count, and
+     keep the rest one click away. Anything switched off stays visible however
+     small, or you could not switch it back on. */
+  var listed = nets.filter(function(n){ return n !== 'Unsorted'; });
+  var shown = listed;
+  if(!netsExpanded && listed.length > NET_CAP){
+    var byCount = listed.slice().sort(function(a,b){
+      return (counts[b]||0)-(counts[a]||0) || a.localeCompare(b,'es');
+    }).slice(0, NET_CAP);
+    var keep = {};
+    byCount.forEach(function(n){ keep[n]=1; });
+    Object.keys(ui.offNets).forEach(function(n){ keep[n]=1; });
+    shown = listed.filter(function(n){ return keep[n]; });
+  }
+  var more = document.getElementById('n-more');
+  if(more){
+    if(listed.length > NET_CAP){
+      more.hidden = false;
+      more.textContent = netsExpanded
+        ? 'Show fewer' : ('Show all ' + listed.length + ' networks');
+    } else {
+      more.hidden = true;
+    }
+  }
+  shown.forEach(function(n){
+    var lab = document.createElement('label');
+    lab.className = 'net' + (ui.offNets[n]?' off':'');
+    lab.innerHTML = '<input type="checkbox"'+(ui.offNets[n]?'':' checked')+'>'+
+      (ui.colorBy === 'network' ? '<span class="dot" style="background:'+colorOf(n)+'"></span>' : '')+
+      '<span class="nm">'+esc(n)+'</span><span class="ct">'+(counts[n]||0)+'</span>';
+    lab.querySelector('input').addEventListener('change',function(e){
+      if(e.target.checked) delete ui.offNets[n]; else ui.offNets[n]=true;
+      renderNets(); render();
+    });
+    box.appendChild(lab);
+  });
+  renderExtras();   // keep the user-added column filters in step with the data
+  renderColorKey(); // after renderExtras, so colorBy is settled
+}
+/* Shape-by choices, plus a legend so the shapes are readable. */
+function renderShapeBy(fields){
+  var sel = document.getElementById('shapeby');
+  var want = [''].concat(Object.keys(fields).sort());
+  if(want.indexOf(ui.shapeBy) < 0) ui.shapeBy = '';
+  var have = Array.prototype.map.call(sel.options, function(o){ return o.value; });
+  if(have.join('|') !== want.join('|')){
+    sel.innerHTML = want.map(function(v){
+      return '<option value="'+esc(v)+'">'+(v ? esc(v) : '(all circles)')+'</option>';
+    }).join('');
+  }
+  sel.value = ui.shapeBy;
+
+  var box = document.getElementById('shapelegend');
+  var dom = shapeDomain();
+  if(!ui.shapeBy || !dom.length){ box.hidden = true; box.innerHTML = ''; return; }
+  box.hidden = false;
+  box.innerHTML = dom.map(function(k){
+    var svg = shapeSVG(shapeFor(k), 7, 'var(--muted)');
+    return '<div class="net" style="cursor:default">'+
+      '<span style="width:20px;display:inline-flex;justify-content:center">'+svg.html+'</span>'+
+      '<span class="nm">'+esc(k)+'</span></div>';
+  }).join('');
+}
+
+/* Settles which column the colours come from, before anything paints.
+   It has to run first: renderNets draws the network swatches and only then
+   calls renderExtras, so resolving this late would put the swatches in two
+   filter groups at once for the rest of the paint.
+   Takes the wanted column the moment it turns up rather than overwriting the
+   wish with the fallback, or a default absent from the seed rows could never
+   survive the first paint. */
+function resolveColorBy(){
+  var want = ['network'].concat(Object.keys(extraFields()).sort());
+  if(want.indexOf(ui.colorByWant) >= 0) ui.colorBy = ui.colorByWant;
+  else if(want.indexOf(ui.colorBy) < 0) ui.colorBy = 'network';
+}
+
+/* Keeps the colour-by choices in step with whatever columns the sheet has. */
+function renderColorBy(fields){
+  var sel = document.getElementById('colorby');
+  var want = ['network'].concat(Object.keys(fields).sort());
+  var have = Array.prototype.map.call(sel.options, function(o){ return o.value; });
+  if(have.join('|') !== want.join('|')){
+    sel.innerHTML = want.map(function(v){
+      return '<option value="'+esc(v)+'">'+esc(v)+'</option>';
+    }).join('');
+  }
+  sel.value = ui.colorBy;
+}
+
+/* One filter group per user-added column, rebuilt whenever the data changes. */
+function renderExtras(){
+  var box = document.getElementById('extras');
+  var fields = extraFields();
+  document.getElementById('sortfilters').value = ui.sortFilters;
+  renderColorBy(fields);
+  renderShapeBy(fields);
+  colorDomain();
+  box.innerHTML = '';
+  Object.keys(fields).sort().forEach(function(f){
+    if(!ui.offExtras[f]) ui.offExtras[f] = {};
+    var counts = extraCounts(f);
+    var sec = document.createElement('div');
+    sec.className = 'rail-sec';
+    var h = document.createElement('h2');
+    h.textContent = f;
+    sec.appendChild(h);
+
+    fields[f].forEach(function(v){
+      var lab = document.createElement('label');
+      lab.className = 'net' + (ui.offExtras[f][v] ? ' off' : '');
+      lab.innerHTML = '<input type="checkbox"'+(ui.offExtras[f][v]?'':' checked')+'>'+
+        (ui.colorBy === f ? '<span class="dot" style="background:'+colorOf(v)+'"></span>' : '')+
+        '<span class="nm">'+esc(v)+'</span>'+
+        '<span class="ct">'+(counts[v]||0)+'</span>';
+      lab.querySelector('input').addEventListener('change', function(e){
+        if(e.target.checked) delete ui.offExtras[f][v];
+        else ui.offExtras[f][v] = true;
+        renderExtras(); render();
+      });
+      sec.appendChild(lab);
+    });
+
+    var btns = document.createElement('div');
+    btns.style.cssText = 'display:flex;gap:6px';
+    btns.innerHTML = '<button class="btn" style="flex:1">All</button>'+
+                     '<button class="btn" style="flex:1">None</button>';
+    btns.children[0].addEventListener('click', function(){
+      ui.offExtras[f] = {}; renderExtras(); render();
+    });
+    btns.children[1].addEventListener('click', function(){
+      ui.offExtras[f] = {};
+      fields[f].forEach(function(v){ ui.offExtras[f][v] = true; });
+      renderExtras(); render();
+    });
+    sec.appendChild(btns);
+    box.appendChild(sec);
+  });
+}
+
+function renderDays(){
+  var box = document.getElementById('days');
+  box.innerHTML='';
+  DAYS.forEach(function(d){
+    var b=document.createElement('button');
+    b.className='day'; b.textContent=d.slice(0,2);
+    b.setAttribute('aria-pressed', ui.offDays[d] ? 'false':'true');
+    b.title=d;
+    b.addEventListener('click',function(){
+      if(ui.offDays[d]) delete ui.offDays[d]; else ui.offDays[d]=true;
+      renderDays(); render();
+    });
+    box.appendChild(b);
+  });
+}
+function renderStats(list, vs){
+  document.getElementById('s-ven').textContent = vs.length;
+  document.getElementById('s-ev').textContent = list.length;
+  // Count only real networks, so this agrees with the list underneath it;
+  // rows with a blank network are not a seventh network.
+  var ns={}; list.forEach(function(r){
+    var n=(r.network||'').trim(); if(n) ns[n]=1;
+  });
+  document.getElementById('s-net').textContent = Object.keys(ns).length;
+
+  var hist = DAYS.map(function(d){ return list.filter(function(r){ return (r.day||'').trim()===d; }).length; });
+  var max = Math.max.apply(null, hist.concat([1]));
+  var bars = document.getElementById('bars');
+  bars.innerHTML='';
+  hist.forEach(function(v,i){
+    var b=document.createElement('div');
+    b.className='bar';
+    b.style.height = Math.round((v/max)*100)+'%';
+    b.title = DAYS[i]+': '+v;
+    if(!v) b.style.opacity='.18';
+    bars.appendChild(b);
+  });
+  var geoless = rows.filter(function(r){ return !isFinite(parseFloat(r.lat))||!isFinite(parseFloat(r.lng)); }).length;
+  document.getElementById('scope').textContent =
+    rows.length+' rows · '+(geoless?geoless+' missing coords':'all geocoded');
+}
+
+/* ---------------------------------------------------------------
+   RENDER: TABLE
+----------------------------------------------------------------*/
+function drawTable(){
+  var wrap = document.getElementById('table-wrap');
+  var t = document.createElement('table');
+  var thead = document.createElement('thead');
+  var hr = document.createElement('tr');
+  hr.innerHTML = '<th></th>' + COLS.map(function(c){ return '<th>'+c+'</th>'; }).join('') + '<th></th>';
+  thead.appendChild(hr); t.appendChild(thead);
+
+  var tb = document.createElement('tbody');
+  rows.forEach(function(r, i){
+    var tr = document.createElement('tr');
+    var sw = '<td class="num"><span class="swatch" style="background:'+colorOf(r.network)+'"></span></td>';
+    var cells = COLS.map(function(c){
+      var cls = (c==='lat'||c==='lng') ? ' class="num"' : '';
+      // In sheet mode the sheet is authoritative, so the table only displays.
+      var edit = sheetMode ? '' : ' contenteditable="true" data-i="'+i+'" data-k="'+c+'"';
+      return '<td'+cls+edit+'>'+esc(r[c]||'')+'</td>';
+    }).join('');
+    tr.innerHTML = sw + cells +
+      (sheetMode ? '<td></td>' : '<td><button class="del" data-del="'+i+'" title="Delete row">×</button></td>');
+    tb.appendChild(tr);
+  });
+  t.appendChild(tb);
+  wrap.innerHTML='';
+  wrap.appendChild(t);
+
+  wrap.querySelectorAll('td[contenteditable]').forEach(function(td){
+    td.addEventListener('blur', function(){
+      var i = +td.dataset.i, k = td.dataset.k;
+      var val = td.textContent.replace(/\s+/g,' ').trim();
+      if(rows[i][k] === val) return;
+      rows[i][k] = val;
+      save(); renderNets(); render();
+    });
+    td.addEventListener('keydown', function(e){
+      if(e.key==='Enter'){ e.preventDefault(); td.blur(); }
+    });
+  });
+  wrap.querySelectorAll('[data-del]').forEach(function(b){
+    b.addEventListener('click', function(){
+      rows.splice(+b.dataset.del,1); save(); renderNets(); render();
+    });
+  });
+}
+
+/* Baked data. GEO holds the shared postal-code polygons; ABNB ABNB,
+   DEN and CAT hold per-polygon attributes keyed by the same CP. Generated by
+   build_map_payload.py — edit that, not this. */
+/* Baked data now lives in ../map-payload.js, loaded above. */
+
+/* ---------------------------------------------------------------
+   CHOROPLETH LAYERS
+   Two datasets on one set of postal-code polygons. GEO holds the shared
+   geometry; ABNB and DEN hold per-polygon counts keyed by the same CP, so
+   "Airbnb per km²" and "cafés per km²" are read on identical shapes and can
+   be compared directly. Geometry lives once rather than per layer: the rings
+   are most of the bytes.
+
+   Airbnb  — Inside Airbnb's CDMX extract, Sept 2026. Nothing here identifies
+             a listing or a host; host names, ids and individual coordinates
+             are dropped during aggregation, so the finest grain is a count
+             for a postal code.
+   Commerce — INEGI DENUE, Nov 2019 against May 2025. A directory re-canvassed
+             each round, NOT a register of openings and closings, and it
+             undercounts informal commerce. Net change is a direction and a
+             rough magnitude, not a count of businesses that shut.
+----------------------------------------------------------------*/
+
+/* Sequential ramps, five classes, for magnitude. Deliberately achromatic-warm:
+   the choropleth is ground and the network palette is figure, so hue belongs
+   to the markers. Dark mode gets its own steps rather than a flip, because
+   the basemap is inverted by a CSS filter while this SVG overlay is not. */
+var AB_RAMP_LIGHT = ['#EDE8DF','#C2B29A','#96825F','#63533A','#33291B'];
+var AB_RAMP_DARK  = ['#2E2921','#5E5443','#948569','#C6B48D','#F2E6C6'];
+
+/* Diverging ramps for the change measures, which run either side of zero:
+   cool for loss, warm for gain, neutral in the middle. A sequential ramp
+   would hide the sign, which is the whole point of a change map. In dark
+   mode both arms brighten away from a dark midpoint. All four ramps clear
+   the CVD and normal-vision adjacent-pair floors. */
+var DV_RAMP_LIGHT = ['#44697C','#9DB9C6','#F0ECE4','#E3AD7A','#97511F'];
+var DV_RAMP_DARK  = ['#93C2DA','#4F7E99','#3E3A33','#8F6B42','#DCA868'];
+
+function num(v){ return (v==null?0:v).toLocaleString('en'); }
+function pct(part, whole){ return whole ? ' <span style="opacity:.6">('+Math.round(100*part/whole)+'%)</span>' : ''; }
+function signed(v){ return (v>0?'+':'') + num(v); }
+
+/* Breaks are fixed and interpretable rather than quantiles, and each set was
+   checked against the real distribution so no class ends up holding almost
+   everything. Densities are log-spaced because they span orders of magnitude.
+   minAb / minN gate the ratios: "3 cafés per abarrote" out of one abarrote
+   says more about the denominator than the colonia, so those polygons are
+   outlined instead of filled. */
+var CHORO = {
+  airbnb: {
+    label: 'Airbnb short-lets',
+    note: 'Inside Airbnb, CDMX, Sept 2026 · aggregated, no hosts or addresses',
+    data: function(){ return ABNB; },
+    popup: abnbPopup,
+    metrics: {
+      density:{title:'Listings per km²', breaks:[30,100,330,1000],
+        get:function(d,g){ return g.k ? d.n/g.k : null; },
+        fmt:function(v){ return num(Math.round(v)); }},
+      n:{title:'Listings', breaks:[25,100,300,1000],
+        get:function(d){ return d.n; }, fmt:function(v){ return num(Math.round(v)); }},
+      entire:{title:'Entire homes', breaks:[45,60,75,88], minN:20, pct:true,
+        get:function(d){ return d.n ? 100*d.e/d.n : null; },
+        fmt:function(v){ return Math.round(v)+'%'; }},
+      multi:{title:'Run by hosts with 5+', breaks:[25,40,55,70], minN:20, pct:true,
+        get:function(d){ return d.n ? 100*d.m/d.n : null; },
+        fmt:function(v){ return Math.round(v)+'%'; }},
+      high:{title:'Bookable 183+ days', breaks:[66,73,80,87], minN:20, pct:true,
+        get:function(d){ return d.n ? 100*d.a/d.n : null; },
+        fmt:function(v){ return Math.round(v)+'%'; }},
+      med:{title:'Median price', breaks:[1000,1250,1550,2100],
+        get:function(d){ return d.d==null ? null : d.d; },
+        fmt:function(v){ return '$'+num(Math.round(v)); }}
+    }
+  },
+  commerce: {
+    label: 'Commerce (DENUE)',
+    note: 'INEGI DENUE, CDMX · Nov 2019 vs May 2025 · a re-canvassed directory, not a closings register',
+    data: function(){ return denView(); },
+    popup: denPopup,
+    metrics: {
+      ratio:{title:'Cafés per corner shop', breaks:[0.15,0.3,0.6,1.5], minAb:10,
+        get:function(d){ return d.a1 ? d.c1/d.a1 : null; },
+        fmt:function(v){ return v.toFixed(2); }},
+      cafedens:{title:'Cafés per km²', breaks:[3,10,22,45],
+        get:function(d,g){ return g.k ? d.c1/g.k : null; },
+        fmt:function(v){ return v.toFixed(1); }},
+      unitdens:{title:'All businesses per km²', breaks:[150,400,800,1500],
+        get:function(d,g){ return g.k ? d.n1/g.k : null; },
+        fmt:function(v){ return num(Math.round(v)); }},
+      dcafe:{title:'Change in cafés, 2019→2025', breaks:[-4,-1,2,5], diverging:true,
+        get:function(d){ return d.c1-d.c0; }, fmt:function(v){ return signed(Math.round(v)); }},
+      dab:{title:'Change in corner shops, 2019→2025', breaks:[-8,-2,2,8], diverging:true,
+        get:function(d){ return d.a1-d.a0; }, fmt:function(v){ return signed(Math.round(v)); }},
+      dunits:{title:'Change in all businesses, 2019→2025', breaks:[-15,-5,5,15],
+        diverging:true, minN0:100,
+        get:function(d){ return d.n0 ? 100*(d.n1-d.n0)/d.n0 : null; },
+        fmt:function(v){ return (v>0?'+':'')+Math.round(v)+'%'; }}
+    }
+  },
+  catastro: {
+    label: 'Property & construction',
+    note: 'SIGCDMX catastro, 2021 · año de construcción also records the last '
+        + 'remodel, and land values are cadastral, so both read as relative',
+    data: function(){ return CAT; },
+    popup: catPopup,
+    metrics: {
+      r2010:{title:'Built or remodelled since 2010', breaks:[1,3,8,20], minN:150, unitN:'cadastral accounts', pct:true,
+        get:function(d){ return d.r; },
+        fmt:function(v){ return v.toFixed(1)+'%'; }},
+      medyr:{title:'Median year of build/remodel', breaks:[1978,1985,1992,1999], minN:150, unitN:'cadastral accounts',
+        get:function(d){ return d.y; },
+        fmt:function(v){ return String(Math.round(v)); }},
+      vsm2:{title:'Land value per m²', breaks:[900,1800,3200,5500], minN:150, unitN:'cadastral accounts',
+        get:function(d){ return d.v; },
+        fmt:function(v){ return '$'+num(Math.round(v)); }}
+    }
+  }
+};
+
+var choroKey = '';                                   // '' = off
+var choroMetric = {airbnb:'density', commerce:'ratio'};
+
+/* ---------------------------------------------------------------
+   DENUE RELEASE SLIDER
+   DENV holds twelve CDMX releases; five are offered here.
+
+   Dropped: the nine between May 2021 and Nov 2023 are near-identical —
+   across that span only 96 of 1162 postal codes change at all, because INEGI
+   carried the register forward instead of re-canvassing — so Nov 2023 stands
+   for the plateau and the rest would be padding. Apr 2019 is dropped too:
+   it reports 8,032 cafés citywide against 9,216 that November, and 1,184
+   cafés in six months is a change in how INEGI counted rather than what was
+   there. Keeping it put an artefact at the left end of the slider.
+
+   The baseline stays Nov 2019, matching the comparison the published map
+   makes, so the slider at its right-hand end reproduces that view. Counts
+   here are recomputed from the raw releases against the same polygons, so
+   they can differ from the baked DEN figures by a handful per postal code
+   where a point sits on a boundary.
+----------------------------------------------------------------*/
+var DENV_PICK = ['1119','1120','1123','1124','0525'];
+var DENV_BASE = '1119';
+var denvAt = DENV_PICK.length - 1;
+
+function denvIndex(tag){
+  for(var i=0;i<DENV.tags.length;i++) if(DENV.tags[i][0] === tag) return i;
+  return -1;
+}
+function denvLabel(tag){
+  var i = denvIndex(tag);
+  return i < 0 ? tag : DENV.tags[i][1];
+}
+function denvCurrentTag(){ return DENV_PICK[denvAt]; }
+
+/* A table shaped like DEN, with the "0" columns pinned to the baseline
+   release and the "1" columns taken from whichever release the slider sits
+   on. The 2025-only extras (bars, restaurants, lodging) pass through
+   untouched — they have no series and the popup labels them as 2025. */
+function denView(){
+  if(typeof DENV === 'undefined') return DEN;
+  var bi = denvIndex(DENV_BASE), ci = denvIndex(denvCurrentTag());
+  if(bi < 0 || ci < 0) return DEN;
+  var out = {};
+  Object.keys(DEN).forEach(function(cp){
+    var d = DEN[cp], n = DENV.n[cp], c = DENV.c[cp], a = DENV.a[cp];
+    if(!n){ out[cp] = d; return; }
+    var o = {};
+    for(var k in d) o[k] = d[k];
+    o.n0 = n[bi]; o.c0 = c[bi]; o.a0 = a[bi];
+    o.n1 = n[ci]; o.c1 = c[ci]; o.a1 = a[ci];
+    out[cp] = o;
+    });
+  return out;
+}
+
+/* Metric titles name the two releases being compared, so a screenshot of the
+   legend still says what it is showing. */
+function vintageTitle(m){
+  if(choroKey !== 'commerce') return m;
+  var cur = denvLabel(denvCurrentTag()), base = denvLabel(DENV_BASE);
+  var t = m.title;
+  if(/^Change in/.test(t)) t = t.replace(/,.*$/, ', ' + base + ' → ' + cur);
+  else t = t + ' · ' + cur;
+  var o = {};
+  for(var k in m) o[k] = m[k];
+  o.title = t;
+  return o;
+}
+
+/* Its own pane, between the tiles (200) and the markers (400/600), so the
+   venues always sit on top of the shading. */
+map.createPane('abPane');
+map.getPane('abPane').style.zIndex = 350;
+map.getPane('abPane').style.pointerEvents = 'auto';
+var abLayer = L.layerGroup().addTo(map);
+
+function rampFor(m){
+  if(m.diverging) return isDark() ? DV_RAMP_DARK : DV_RAMP_LIGHT;
+  return isDark() ? AB_RAMP_DARK : AB_RAMP_LIGHT;
+}
+
+function abClass(v, breaks){
+  for(var i=0;i<breaks.length;i++){ if(v < breaks[i]) return i; }
+  return breaks.length;
+}
+
+/* A polygon is outlined rather than filled when its denominator is too small
+   for the measure to mean anything. The counts in the popup are still exact. */
+function tooThin(m, d){
+  if(m.minN   && (d.n  || 0) < m.minN)   return 'under '+m.minN+' '+(m.unitN||'listings');
+  if(m.minAb  && (d.a1 || 0) < m.minAb)  return 'under '+m.minAb+' corner shops';
+  if(m.minN0  && (d.n0 || 0) < m.minN0)  return 'under '+m.minN0+' businesses in 2019';
+  return '';
+}
+
+function headRow(g, cp){
+  return '<div class="pop"><h3>'+esc(g.n)+'</h3>'+
+    '<div class="addr">'+esc(g.a||'')+' · CP '+esc(cp)+' · '+(g.k||0).toFixed(2)+' km²</div>';
+}
+function tr(k, v){ return '<tr><th>'+k+'</th><td>'+v+'</td></tr>'; }
+
+function abnbPopup(cp, g, d, m, thin){
+  var h = headRow(g, cp) + '<table class="abt">';
+  h += tr('Airbnb listings', num(d.n));
+  h += tr('Per km²', g.k ? num(Math.round(d.n/g.k)) : '—');
+  h += tr('Entire homes', num(d.e)+pct(d.e,d.n));
+  h += tr('Private rooms', num(d.p)+pct(d.p,d.n));
+  h += tr('Distinct hosts', num(d.h));
+  h += tr('Run by hosts with 5+', num(d.m)+pct(d.m,d.n));
+  h += tr('Bookable 183+ days', num(d.a)+pct(d.a,d.n));
+  h += tr('Reviewed in last 12m', num(d.r)+pct(d.r,d.n));
+  h += tr('Median price', d.d==null ? '—' : '$'+num(d.d)+' MXN');
+  h += '</table>';
+  if(thin) h += '<div class="abnote">Outlined, not shaded: '+esc(thin)+
+                ', so a percentage says more about the small number than about '+
+                'the colonia. The counts above are exact.</div>';
+  h += '<div class="abnote">'+esc(CHORO.airbnb.note)+'</div></div>';
+  return h;
+}
+
+function denPopup(cp, g, d, m, thin){
+  var delta = function(a, b){
+    var dd = b - a;
+    return num(a)+' → '+num(b)+' <span style="opacity:.6">('+signed(dd)+')</span>';
+  };
+  var h = headRow(g, cp) + '<table class="abt">';
+  h += tr('Releases compared', denvLabel(DENV_BASE) + ' → ' + denvLabel(denvCurrentTag()));
+  h += tr('All businesses', delta(d.n0, d.n1));
+  h += tr('Cafés', delta(d.c0, d.c1));
+  h += tr('Corner shops', delta(d.a0, d.a1));
+  h += tr('Cafés per corner shop', d.a1 ? (d.c1/d.a1).toFixed(2) : '—');
+  h += tr('Bars (2025)', num(d.b1));
+  h += tr('Restaurants (2025)', num(d.r1));
+  h += tr('Lodging (2025)', num(d.l1));
+  h += tr('Tortillerías (2025)', num(d.t1));
+  h += tr('Gyms (2025)', num(d.g1));
+  h += '</table>';
+  if(thin) h += '<div class="abnote">Outlined, not shaded: '+esc(thin)+
+                '. The counts above are exact.</div>';
+  h += '<div class="abnote">'+esc(CHORO.commerce.note)+'</div></div>';
+  return h;
+}
+
+function catPopup(cp, g, d, m, thin){
+  var h = headRow(g, cp) + '<table class="abt">';
+  h += tr('Cadastral accounts', num(d.n));
+  h += tr('Built surface', num(d.c)+' m²');
+  h += tr('Built or remodelled since 2010', d.r.toFixed(1)+'%');
+  h += tr('Median year of build/remodel', d.y);
+  h += tr('Land value', '$'+num(Math.round(d.v))+' / m²');
+  h += '</table>';
+  if(thin) h += '<div class="abnote">Outlined, not shaded: '+esc(thin)+
+                '. The figures above are exact.</div>';
+  h += '<div class="abnote">'+esc(CHORO.catastro.note)+'</div></div>';
+  return h;
+}
+
+function drawChoro(){
+  abLayer.clearLayers();
+  var legend = document.getElementById('ab-legend');
+  var spec = CHORO[choroKey];
+  if(!spec){ if(legend) legend.hidden = true; return; }
+
+  var m = spec.metrics[choroMetric[choroKey]] || spec.metrics[Object.keys(spec.metrics)[0]];
+  m = vintageTitle(m);
+  var ramp = rampFor(m);
+  var table = spec.data();
+
+  Object.keys(table).forEach(function(cp){
+    var g = GEO[cp]; if(!g) return;
+    var d = table[cp];
+    var thin = tooThin(m, d);
+    var v = thin ? null : m.get(d, g);
+    var style;
+    if(v == null){
+      style = {pane:'abPane', stroke:true, color:ramp[2], weight:0.7,
+               dashArray:'2,3', opacity:0.55, fill:false};
+    }else{
+      var ci = abClass(v, m.breaks);
+      style = {pane:'abPane', stroke:true, weight:0.5, opacity:0.3,
+               color:ramp[Math.min(ci+1, ramp.length-1)],
+               fill:true, fillColor:ramp[ci], fillOpacity:0.68};
+    }
+    var html = spec.popup(cp, g, d, m, thin);
+    g.r.forEach(function(ring){
+      var pts = ring.map(function(p){ return [p[1], p[0]]; });   // stored lng,lat
+      var poly = L.polygon(pts, style);
+      poly.bindPopup(html, {maxWidth:300});
+      poly.bindTooltip(g.n + (v==null ? '' : ' · ' + m.fmt(v)),
+        {direction:'top', sticky:true});
+      abLayer.addLayer(poly);
+    });
+  });
+
+  choroLegend(spec, m, ramp);
+}
+
+function choroLegend(spec, m, ramp){
+  var el = document.getElementById('ab-legend');
+  if(!el) return;
+  var b = m.breaks, out = '<div class="lgd-t">'+esc(m.title)+'</div>';
+  /* Contrast against the basemap is below 3:1 at the pale end by design, so
+     the class labels carry the reading rather than the fill alone. */
+  for(var i=ramp.length-1;i>=0;i--){
+    var lab;
+    if(i === 0)              lab = 'under '+m.fmt(b[0]);
+    else if(i === b.length)  lab = m.fmt(b[b.length-1])+' and over';
+    else                     lab = m.fmt(b[i-1])+' – '+m.fmt(b[i]);
+    out += '<div class="ab-row"><span class="ab-sw" style="background:'+ramp[i]+'"></span>'+lab+'</div>';
+  }
+  var gate = m.minN ? ('under '+m.minN+' '+(m.unitN||'listings'))
+           : m.minAb ? ('under '+m.minAb+' corner shops')
+           : m.minN0 ? ('under '+m.minN0+' businesses in 2019') : '';
+  if(gate){
+    out += '<div class="ab-row"><span class="ab-sw none" style="border-color:'+ramp[2]+'"></span>'+gate+'</div>';
+  }
+  out += '<p class="note" style="margin:7px 0 0">'+esc(spec.note)+'.</p>';
+  el.innerHTML = out;
+  el.hidden = false;
+}
+
+function render(){
+  if(ui.view==='map'){ drawChoro(); drawMap(); }
+  else { drawTable(); renderStats(visible(), venues(visible())); }
+}
+
+/* ---------------------------------------------------------------
+   CSV
+----------------------------------------------------------------*/
+function parseCSV(text){
+  var out=[], row=[], cur='', q=false, i=0;
+  text = text.replace(/\r\n/g,'\n').replace(/\r/g,'\n');
+  while(i<text.length){
+    var c=text[i];
+    if(q){
+      if(c==='"'){ if(text[i+1]==='"'){ cur+='"'; i+=2; continue; } q=false; i++; continue; }
+      cur+=c; i++; continue;
+    }
+    if(c==='"'){ q=true; i++; continue; }
+    if(c===','){ row.push(cur); cur=''; i++; continue; }
+    if(c==='\n'){ row.push(cur); out.push(row); row=[]; cur=''; i++; continue; }
+    cur+=c; i++;
+  }
+  if(cur.length||row.length){ row.push(cur); out.push(row); }
+  return out.filter(function(r){ return r.some(function(c){ return String(c).trim()!==''; }); });
+}
+function toCSV(list){
+  var xf = [];
+  list.forEach(function(r){
+    if(!r._x) return;
+    Object.keys(r._x).forEach(function(f){ if(xf.indexOf(f)<0) xf.push(f); });
+  });
+  var cell = function(v){
+    v = String(v==null?'':v);
+    return /[",\n]/.test(v) ? '"'+v.replace(/"/g,'""')+'"' : v;
+  };
+  var head = COLS.concat(xf).map(cell).join(',');
+  var body = list.map(function(r){
+    return COLS.map(function(c){ return cell(r[c]); })
+      .concat(xf.map(function(f){ return cell(r._x && r._x[f]); })).join(',');
+  }).join('\n');
+  return head+'\n'+body;
+}
+function toGeoJSON(list){
+  return JSON.stringify({type:'FeatureCollection', features:venues(list).map(function(v){
+    return {type:'Feature',
+      geometry:{type:'Point',coordinates:[v.lng,v.lat]},
+      properties:{venue:v.venue,address:v.address,colonia:v.colonia,
+        event_count:v.events.length,
+        networks:Array.from(new Set(v.events.map(function(e){return e.network;}))),
+        events:v.events.map(function(e){
+          return {event:e.event,network:e.network,day:e.day,time:e.time,
+                  cadence:e.cadence,access:e.access,source:e.source,notes:e.notes};
+        })}};
+  })}, null, 2);
+}
+function download(name, text, type){
+  var blob = new Blob([text],{type:type||'text/plain;charset=utf-8'});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href=url; a.download=name; document.body.appendChild(a); a.click();
+  setTimeout(function(){ URL.revokeObjectURL(url); a.remove(); }, 400);
+}
+
+/* ---------------------------------------------------------------
+   GEOCODING (Nominatim — 1 request/second, see usage policy)
+----------------------------------------------------------------*/
+function status(msg, keep){
+  var el = document.getElementById('status');
+  if(!msg){ el.hidden=true; return; }
+  el.hidden=false; el.textContent=msg;
+  if(!keep) setTimeout(function(){ el.hidden=true; }, 3200);
+}
+function sleep(ms){ return new Promise(function(r){ setTimeout(r,ms); }); }
+
+async function geocodeMissing(){
+  var todo = rows.map(function(r,i){ return {r:r,i:i}; })
+    .filter(function(x){
+      return (!isFinite(parseFloat(x.r.lat))||!isFinite(parseFloat(x.r.lng))) && (x.r.address||x.r.venue);
+    });
+  if(!todo.length){ status('Every row already has coordinates.'); return; }
+  var done=0, failed=0;
+  for(var k=0;k<todo.length;k++){
+    var r = todo[k].r;
+    var qs = [r.venue, r.address, r.colonia, 'Ciudad de México, México']
+      .filter(Boolean).join(', ');
+    status('Geocoding '+(k+1)+' of '+todo.length+' — '+(r.venue||r.address), true);
+    try{
+      var url = 'https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=mx'+
+        '&viewbox=-99.20,19.45,-99.13,19.38&bounded=1&q='+encodeURIComponent(qs);
+      var res = await fetch(url, {headers:{'Accept':'application/json'}});
+      var js = await res.json();
+      if(js && js.length){ r.lat = parseFloat(js[0].lat).toFixed(6); r.lng = parseFloat(js[0].lon).toFixed(6); done++; }
+      else failed++;
+    }catch(e){ failed++; }
+    await sleep(1100);
+  }
+  save(); renderNets(); render();
+  status('Geocoded '+done+' row'+(done===1?'':'s')+(failed?' · '+failed+' not found — fill lat/lng by hand':''));
+  // Sheet-backed rows aren't saved anywhere, so hand the results back for pasting.
+  if(sheetMode && done){
+    coordsPanel(todo.map(function(x){ return x.r; }).filter(function(r){ return r.lat && r.lng; }));
+  }
+}
+
+/* ---------------------------------------------------------------
+   PANELS
+----------------------------------------------------------------*/
+function panel(html){
+  var scrim = document.createElement('div');
+  scrim.className='scrim';
+  scrim.innerHTML = '<div class="panel" role="dialog" aria-modal="true">'+html+'</div>';
+  scrim.addEventListener('click', function(e){ if(e.target===scrim) scrim.remove(); });
+  document.addEventListener('keydown', function esc(e){
+    if(e.key==='Escape'){ scrim.remove(); document.removeEventListener('keydown', esc); }
+  });
+  document.body.appendChild(scrim);
+  return scrim;
+}
+
+function addPanel(){
+  var netOpts = networks().map(function(n){ return '<option value="'+esc(n)+'">'; }).join('');
+  var p = panel(
+    '<h2>Add an event</h2><p class="sub">One row per event or recurring series. Leave lat/lng blank and press Geocode afterwards.</p>'+
+    '<div class="grid2">'+
+      '<label class="fld">Venue<input id="f-venue" required></label>'+
+      '<label class="fld">Colonia<input id="f-colonia" list="l-col" placeholder="Roma Norte"></label>'+
+      '<label class="fld" style="grid-column:1/-1">Address<input id="f-address" placeholder="Street, number, colonia"></label>'+
+      '<label class="fld">Network / organizer<input id="f-network" list="l-net" placeholder="Run clubs"></label>'+
+      '<label class="fld">Event name<input id="f-event"></label>'+
+      '<label class="fld">Day<select id="f-day"><option value=""></option>'+
+        DAYS.map(function(d){return '<option>'+d+'</option>';}).join('')+'<option>varies</option></select></label>'+
+      '<label class="fld">Time<input id="f-time" placeholder="19:30"></label>'+
+      '<label class="fld">Cadence<select id="f-cadence">'+
+        ['','weekly','biweekly','monthly','one-off','irregular'].map(function(c){return '<option>'+c+'</option>';}).join('')+
+        '</select></label>'+
+      '<label class="fld">Access<select id="f-access">'+
+        ['','open','rsvp','invite','paid','members'].map(function(c){return '<option>'+c+'</option>';}).join('')+
+        '</select></label>'+
+      '<label class="fld">Lat<input id="f-lat" placeholder="optional"></label>'+
+      '<label class="fld">Lng<input id="f-lng" placeholder="optional"></label>'+
+      '<label class="fld" style="grid-column:1/-1">Source<input id="f-source" placeholder="fieldnote 2026-10-14 / URL / interview ID"></label>'+
+      '<label class="fld" style="grid-column:1/-1">Notes<textarea id="f-notes" rows="2"></textarea></label>'+
+    '</div>'+
+    '<datalist id="l-net">'+netOpts+'</datalist>'+
+    '<datalist id="l-col"><option value="Roma Norte"><option value="Roma Sur"><option value="Condesa"><option value="Hipódromo"><option value="Hipódromo Condesa"><option value="Juárez"><option value="Doctores"><option value="Escandón"><option value="Nápoles"><option value="Del Valle"></datalist>'+
+    '<div class="row-end"><button class="btn" data-x>Cancel</button><button class="btn primary" id="f-save">Add row</button></div>'
+  );
+  p.querySelector('[data-x]').addEventListener('click', function(){ p.remove(); });
+  p.querySelector('#f-venue').focus();
+  p.querySelector('#f-save').addEventListener('click', function(){
+    var g = function(id){ var el=p.querySelector('#f-'+id); return el ? el.value.trim() : ''; };
+    if(!g('venue')){ p.querySelector('#f-venue').focus(); return; }
+    rows.push({
+      venue:g('venue'), address:g('address'), colonia:g('colonia'),
+      lat:g('lat'), lng:g('lng'), network:g('network')||'Unsorted', event:g('event'),
+      day:g('day'), time:g('time'), cadence:g('cadence'), access:g('access'),
+      source:g('source'), notes:g('notes')
+    });
+    save(); renderNets(); render(); p.remove();
+    status('Row added' + (g('lat')?'':' — press Geocode to place it'));
+  });
+}
+
+function importPanel(){
+  var p = panel(
+    '<h2>Import CSV</h2>'+
+    '<p class="sub">Paste from a spreadsheet or choose a file. A header row is expected; columns are matched by name and extra columns are ignored.</p>'+
+    '<p style="font-size:12px;margin:0 0 10px"><code>'+COLS.join(', ')+'</code></p>'+
+    '<input type="file" id="i-file" accept=".csv,text/csv" style="margin-bottom:10px">'+
+    '<textarea id="i-text" rows="9" placeholder="venue,address,colonia,lat,lng,network,event,day,time,cadence,access,source,notes&#10;Parque México,Av. México s/n,Hipódromo,,,Run clubs,Lunes run,Mon,07:00,weekly,open,fieldnote,"></textarea>'+
+    '<label class="toggle" style="margin-top:10px"><input type="checkbox" id="i-replace"> Replace existing rows instead of appending</label>'+
+    '<div class="row-end"><button class="btn" data-x>Cancel</button><button class="btn primary" id="i-go">Import</button></div>'
+  );
+  p.querySelector('[data-x]').addEventListener('click', function(){ p.remove(); });
+  p.querySelector('#i-file').addEventListener('change', function(e){
+    var f = e.target.files[0]; if(!f) return;
+    var fr = new FileReader();
+    fr.onload = function(){ p.querySelector('#i-text').value = fr.result; };
+    fr.readAsText(f);
+  });
+  p.querySelector('#i-go').addEventListener('click', function(){
+    var txt = p.querySelector('#i-text').value.trim();
+    if(!txt){ p.remove(); return; }
+    var grid = parseCSV(txt);
+    if(grid.length<2){ status('Nothing to import — needs a header row plus at least one data row.'); return; }
+    var head = grid[0].map(function(h){ return h.trim().toLowerCase(); });
+    var fresh = grid.slice(1).map(function(g){
+      var o={};
+      COLS.forEach(function(c){
+        var idx = head.indexOf(c);
+        o[c] = idx>=0 ? String(g[idx]==null?'':g[idx]).trim() : '';
+      });
+      if(!o.network) o.network='Unsorted';
+      return o;
+    }).filter(function(o){ return o.venue || o.event; });
+    if(p.querySelector('#i-replace').checked) rows = fresh;
+    else rows = rows.concat(fresh);
+    save(); renderNets(); render(); p.remove();
+    status('Imported '+fresh.length+' row'+(fresh.length===1?'':'s'));
+  });
+}
+
+/* The page can rewrite a copy of its own source with the current rows baked in,
+   so the published file carries the data instead of relying on a viewer's
+   browser storage, which is per-person and never travels with a link. */
+async function exportStandalone(btn){
+  if(location.protocol === 'file:'){
+    status('Publishing needs the file served over localhost — see the ? panel.');
+    return;
+  }
+  var old = btn.textContent;
+  btn.textContent = 'Building…'; btn.disabled = true;
+  try{
+    var res = await fetch(location.href, {cache:'no-store'});
+    if(!res.ok) throw new Error(res.status);
+    var src = await res.text();
+    if(!/var SEED = \[/.test(src)) throw new Error('source not recognised');
+    var json = JSON.stringify(rows, null, 2);
+    src = src.replace(/var SEED = \[[\s\S]*?\n\];/, function(){ return 'var SEED = ' + json + ';'; });
+    src = src.replace(/var SEED_STAMP = '[^']*';/, function(){
+      return "var SEED_STAMP = 'pub-" + Date.now() + "';";
+    });
+    // Carry the shared source into the published copy so the hosted map stays connected.
+    src = src.replace(/var SHEET_URL = '[^']*';/, function(){
+      return "var SHEET_URL = " + JSON.stringify(sheetUrl()) + ";";
+    });
+    src = src.replace(/var FORM_URL  = '[^']*';/, function(){
+      return "var FORM_URL  = " + JSON.stringify(formUrl()) + ";";
+    });
+    download('circuito-publicado.html', src, 'text/html;charset=utf-8');
+    status('Built a standalone copy with '+rows.length+' rows baked in.');
+  }catch(e){
+    status('Could not read this page\'s own source — export CSV instead.');
+  }
+  btn.textContent = old; btn.disabled = false;
+}
+
+function exportPanel(){
+  var p = panel(
+    '<h2>Export &amp; publish</h2>'+
+    '<p class="sub">Your rows live in this browser, not in the file. To hand the map to someone else, publish a standalone copy — it carries the data inside it.</p>'+
+    '<div class="row-end" style="justify-content:flex-start;margin:0 0 6px">'+
+      '<button class="btn primary" id="e-html">Publish standalone HTML</button>'+
+    '</div>'+
+    '<p class="sub">Upload the downloaded file to Netlify Drop, GitHub Pages, or any web host, and the link shows everyone your current '+rows.length+' rows. Republishing refreshes it for people who already opened it.</p>'+
+    '<p class="sub" style="margin:16px 0 6px"><b>Data files</b> — CSV round-trips back into this page and opens in Sheets or Excel. GeoJSON opens in QGIS, kepler.gl, Felt or Datawrapper.</p>'+
+    '<div class="row-end" style="justify-content:flex-start">'+
+      '<button class="btn" id="e-csv">CSV (all rows)</button>'+
+      '<button class="btn" id="e-csvv">CSV (filtered view)</button>'+
+      '<button class="btn" id="e-geo">GeoJSON (filtered view)</button>'+
+    '</div>'+
+    '<p class="sub" style="margin:16px 0 6px">Or copy the CSV straight out:</p>'+
+    '<textarea rows="6" id="e-text" readonly></textarea>'+
+    '<div class="row-end"><button class="btn" data-x>Close</button></div>'
+  );
+  p.querySelector('#e-text').value = toCSV(rows);
+  p.querySelector('[data-x]').addEventListener('click', function(){ p.remove(); });
+  p.querySelector('#e-html').addEventListener('click', function(e){ exportStandalone(e.target); });
+  p.querySelector('#e-csv').addEventListener('click', function(){
+    download('circuito-roma-condesa.csv', toCSV(rows), 'text/csv;charset=utf-8'); });
+  p.querySelector('#e-csvv').addEventListener('click', function(){
+    download('circuito-filtered.csv', toCSV(visible()), 'text/csv;charset=utf-8'); });
+  p.querySelector('#e-geo').addEventListener('click', function(){
+    download('circuito-roma-condesa.geojson', toGeoJSON(visible()), 'application/geo+json'); });
+}
+
+function sourcePanel(){
+  var p = panel(
+    '<h2>Data source</h2>'+
+    '<p class="sub">Point the map at a published Google Sheet and the sheet becomes the source of truth — everyone sees entries as soon as the sheet has them, with nothing to republish.</p>'+
+    '<label class="fld" style="margin-bottom:10px">Sheet link — the ordinary <code>/edit</code> address works best'+
+      '<input id="s-sheet" placeholder="https://docs.google.com/spreadsheets/d/1AbC…/edit#gid=0"></label>'+
+    '<label class="fld" style="margin-bottom:10px">Google Form link (optional)'+
+      '<input id="s-form" placeholder="https://docs.google.com/forms/d/e/…/viewform"></label>'+
+    '<p class="sub" style="margin:0 0 4px"><b>Setting up the sheet</b></p>'+
+    '<ul class="guide" style="margin-top:0">'+
+      '<li>Make a sheet whose first row holds the column names: <code>'+COLS.join(', ')+'</code>. Spanish headers work too — <code>lugar</code>, <code>dirección</code>, <code>colonia</code>, <code>organizador</code> and so on are recognised.</li>'+
+      '<li>Add an <code>approved</code> column (or <code>aprobado</code>) if you want to vet entries. When that column exists, only rows marked yes, sí, x or true appear on the map. Leave the column out entirely and everything shows.</li>'+
+      '<li>Share it: click <b>Share</b>, set <b>General access</b> to <b>Anyone with the link</b> as <b>Viewer</b>, then copy the address from your browser bar and paste it above. Publish-to-web links work too, but the plain address is more reliable — it carries the sheet id, which gives the map a second way in.</li>'+
+      '<li>For a form, build it in Google Forms with question titles matching the column names, send responses to this sheet, and paste the form link above. Collaborators then get a Submit button instead of the editing tools.</li>'+
+    '</ul>'+
+    '<div class="row-end">'+
+      '<button class="btn" id="s-clear">Disconnect</button>'+
+      '<button class="btn" data-x>Cancel</button>'+
+      '<button class="btn primary" id="s-save">Save &amp; load</button>'+
+    '</div>'
+  );
+  p.querySelector('#s-sheet').value = sheetUrl();
+  p.querySelector('#s-form').value = formUrl();
+  p.querySelector('[data-x]').addEventListener('click', function(){ p.remove(); });
+  p.querySelector('#s-clear').addEventListener('click', function(){
+    try{ localStorage.setItem(STORE+'-sheet',''); localStorage.setItem(STORE+'-form',''); }catch(e){}
+    p.remove();
+    sheetMode = false; applyMode(); load(); renderNets(); render();
+    status('Disconnected — back to the local working copy.');
+  });
+  p.querySelector('#s-save').addEventListener('click', function(){
+    var s = p.querySelector('#s-sheet').value.trim();
+    var f = p.querySelector('#s-form').value.trim();
+    try{ localStorage.setItem(STORE+'-sheet', s); localStorage.setItem(STORE+'-form', f); }catch(e){}
+    p.remove();
+    sheetMode = !!s; applyMode();
+    if(s) refreshFromSheet(false); else { load(); renderNets(); render(); }
+  });
+}
+
+/* Switches the interface between the local working copy and sheet-backed mode. */
+function applyMode(){
+  var connected = sheetMode;
+  var f = formUrl();
+  document.getElementById('b-import').hidden = connected;
+  document.getElementById('b-reload').hidden = !connected;
+  // The add button is out of the header for now. Kept null-safe so restoring
+  // it is one line of markup rather than a hunt through the wiring.
+  var add = document.getElementById('b-add');
+  if(add) add.textContent = connected ? (f ? 'Submit a venue' : 'Add in the sheet') : 'Add event';
+  document.getElementById('b-reset').hidden = connected;
+  var src = document.getElementById('src-note');
+  if(connected){
+    src.hidden = false;
+    src.innerHTML = 'Connected to a shared sheet' +
+      (sheetFetchedAt ? ' · read at '+sheetFetchedAt.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) : '') +
+      '. Edits belong in the sheet, not here.';
+  } else {
+    src.hidden = true;
+  }
+}
+
+function coordsPanel(list){
+  var csv = 'venue,address,lat,lng\n' + list.map(function(r){
+    return [r.venue, r.address, r.lat, r.lng].map(function(v){
+      v = String(v==null?'':v);
+      return /[",\n]/.test(v) ? '"'+v.replace(/"/g,'""')+'"' : v;
+    }).join(',');
+  }).join('\n');
+  var p = panel(
+    '<h2>Coordinates to paste back</h2>'+
+    '<p class="sub">These were looked up just now and live only in this browser. Paste the lat and lng into the matching rows of the sheet so everyone else gets them too, and so nobody re-runs the lookups.</p>'+
+    '<textarea rows="9" id="c-text" readonly></textarea>'+
+    '<div class="row-end"><button class="btn" id="c-copy">Copy</button>'+
+    '<button class="btn primary" data-x>Done</button></div>'
+  );
+  p.querySelector('#c-text').value = csv;
+  p.querySelector('[data-x]').addEventListener('click', function(){ p.remove(); });
+  p.querySelector('#c-copy').addEventListener('click', function(){
+    var ta = p.querySelector('#c-text');
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(csv).then(function(){ status('Copied'); },
+        function(){ ta.select(); });
+    } else { ta.select(); }
+  });
+}
+
+function helpPanel(){
+  panel(
+    '<h2>Field guide</h2>'+
+    '<p class="sub">How this map is meant to be fed.</p>'+
+    '<ul class="guide">'+
+      '<li><b>One row per event series.</b> A venue becomes a hub because several rows point at it, so the circle grows on its own — don\'t pre-aggregate.</li>'+
+      '<li><b>network</b> is the organizing unit you care about: the collective, host, club or scene that convenes the thing. That column is what the colors and the organizer ties are built from.</li>'+
+      '<li><b>Organizer ties</b> draw each network\'s venues back to the network\'s own centroid. A tight star means a network that stays on a few blocks; a wide one means a network that circulates.</li>'+
+      '<li><b>source</b> should carry provenance: a fieldnote date, an interview ID, or a URL. Keep it filled — it is the difference between a map and an assertion.</li>'+
+      '<li><b>Private addresses.</b> House parties and members-only spaces are where a lot of this actually happens. Consider recording those at block or colonia level rather than door level, and keeping the precise coordinate out of anything you publish.</li>'+
+      '<li><b>Sharing.</b> Sending someone this file alone sends an empty map — your rows are in your browser, not in the file. Use Export &rarr; <i>Publish standalone HTML</i>, which writes a copy with the data baked in, then upload that copy. Filter the map first if you want to publish only part of it, since publishing takes every row regardless of the current filters.</li>'+
+    '</ul>'+
+    '<p class="sub" style="margin-top:14px"><b>Opening this file from disk vs. a server.</b> Double-clicking the file works, but the browser then sends no referer header, and several map-tile and geocoding services reject requests without one. The Esri basemaps tolerate it; OpenStreetMap\'s do not, and Nominatim geocoding may not either. To get everything working, open a terminal in this folder and run <code>python3 -m http.server 8000</code>, then load <code>localhost:8000</code> in your browser and click the file.</p>'+
+    '<p class="sub">Data lives in this browser\'s local storage, keyed to how you opened the file — rows entered from <code>file://</code> won\'t appear when you switch to <code>localhost</code>. Export to CSV first, then re-import on the other side.</p>'+
+    '<div class="row-end"><button class="btn primary" data-x>Got it</button></div>'
+  ).querySelector('[data-x]').addEventListener('click', function(e){ e.target.closest('.scrim').remove(); });
+}
+
+/* ---------------------------------------------------------------
+   WIRING
+----------------------------------------------------------------*/
+document.getElementById('q').addEventListener('input', function(e){ ui.q=e.target.value; render(); });
+document.getElementById('n-all').addEventListener('click', function(){ ui.offNets={}; renderNets(); render(); });
+document.getElementById('n-more').addEventListener('click', function(){
+  netsExpanded = !netsExpanded; renderNets();
+});
+document.getElementById('n-none').addEventListener('click', function(){
+  ui.offNets={}; networks().forEach(function(n){ ui.offNets[n]=true; }); renderNets(); render();
+});
+document.getElementById('t-ties').addEventListener('change', function(e){ ui.ties=e.target.checked; render(); });
+document.getElementById('t-size').addEventListener('change', function(e){ ui.size=e.target.checked; render(); });
+document.getElementById('t-lab').addEventListener('change', function(e){ ui.labels=e.target.checked; render(); });
+document.getElementById('b-fit').addEventListener('click', function(){
+  var vs = venues(visible());
+  if(!vs.length){ status('Nothing to zoom to.'); return; }
+  map.fitBounds(L.latLngBounds(vs.map(function(v){ return [v.lat,v.lng]; })).pad(0.18));
+});
+var addBtn = document.getElementById('b-add');
+if(addBtn) addBtn.addEventListener('click', function(){
+  if(!sheetMode){ addPanel(); return; }
+  var f = formUrl();
+  if(f) window.open(f, '_blank', 'noopener');
+  else status('Add the row in the shared sheet — the map reads from it.');
+});
+document.getElementById('b-import').addEventListener('click', importPanel);
+document.getElementById('b-export').addEventListener('click', exportPanel);
+document.getElementById('b-help').addEventListener('click', helpPanel);
+document.getElementById('b-src').addEventListener('click', sourcePanel);
+document.getElementById('b-reload').addEventListener('click', function(){
+  refreshFromSheet(false).then(applyMode);
+});
+document.getElementById('b-reset').addEventListener('click', function(){
+  rows = SEED.map(function(r){ return Object.assign({},r); });
+  save(); renderNets(); render(); status('Reset to seed rows');
+});
+document.getElementById('b-theme').addEventListener('click', function(){
+  var cur = document.documentElement.getAttribute('data-theme');
+  var next = cur==='dark' ? 'light' : (cur==='light' ? '' : (isDark()?'light':'dark'));
+  if(next) document.documentElement.setAttribute('data-theme', next);
+  else document.documentElement.removeAttribute('data-theme');
+  retile();
+});
+document.getElementById('rail-toggle').addEventListener('click', function(){
+  var r = document.getElementById('rail'); r.hidden = !r.hidden;
+});
+
+function setView(v){
+  ui.view = v;
+  document.getElementById('v-map').setAttribute('aria-pressed', v==='map');
+  document.getElementById('v-tab').setAttribute('aria-pressed', v==='tab');
+  document.getElementById('map').hidden = (v!=='map');
+  document.getElementById('table-wrap').hidden = (v!=='tab');
+  render();
+  if(v==='map') setTimeout(function(){ map.invalidateSize(); }, 30);
+}
+document.getElementById('v-map').addEventListener('click', function(){ setView('map'); });
+document.getElementById('v-tab').addEventListener('click', function(){ setView('tab'); });
+
+document.getElementById('sortfilters').addEventListener('change', function(e){
+  ui.sortFilters = e.target.value;
+  renderNets();
+});
+
+document.getElementById('shapeby').addEventListener('change', function(e){
+  ui.shapeBy = e.target.value;
+  renderNets();     // rebuilds the legend too
+  render();
+});
+
+document.getElementById('colorby').addEventListener('change', function(e){
+  // Record the pick as the new wish too, or the next rebuild would snap the
+  // dropdown back to the default.
+  ui.colorBy = ui.colorByWant = e.target.value;
+  colorDomain();
+  renderNets();     // also rebuilds the extra groups, moving the swatches
+  render();
+});
+
+var abLayerSel  = document.getElementById('ab-layer');
+var abMetricSel = document.getElementById('ab-metric');
+var abMetricWrap= document.getElementById('ab-metric-wrap');
+
+/* Remembered per dataset, so switching Airbnb -> Commerce -> Airbnb does not
+   lose the measure you had chosen on each. */
+try{ choroKey = localStorage.getItem(STORE+'-cholayer') || ''; }catch(e){}
+if(!CHORO[choroKey]) choroKey = '';
+Object.keys(CHORO).forEach(function(k){
+  var saved = null;
+  try{ saved = localStorage.getItem(STORE+'-chometric-'+k); }catch(e){}
+  if(saved && CHORO[k].metrics[saved]) choroMetric[k] = saved;
+});
+
+var abVintageWrap = document.getElementById('ab-vintage-wrap');
+var abVintageSel  = document.getElementById('ab-vintage');
+var abVintageLab  = document.getElementById('ab-vintage-label');
+
+/* The slider only belongs to Commerce: the Airbnb extract is one snapshot and
+   the catastro is another, so offering it there would promise a series that
+   does not exist. */
+function syncVintageControl(){
+  var on = (choroKey === 'commerce' && typeof DENV !== 'undefined');
+  abVintageWrap.hidden = !on;
+  if(!on) return;
+  abVintageSel.max = DENV_PICK.length - 1;
+  abVintageSel.value = denvAt;
+  abVintageLab.textContent = denvLabel(denvCurrentTag());
+  document.getElementById('ab-vintage-ticks').innerHTML =
+    '<div style="display:flex;justify-content:space-between;font-size:10px;opacity:.6">' +
+    DENV_PICK.map(function(t){
+      var L = denvLabel(t);                       // "Nov 2019" -> "N’19"
+      return '<span>' + esc(L.charAt(0) + '’' + L.slice(-2)) + '</span>';
+    }).join('') +
+    '</div>';
+}
+
+/* Sitting on the baseline is not a failure, but a diverging ramp centred on
+   zero looks like one: every polygon lands in the neutral middle class. Say so
+   rather than letting it read as missing data. */
+function updateVintageNote(){
+  var el = document.getElementById('ab-vintage-note');
+  if(!el) return;
+  var m = CHORO.commerce.metrics[choroMetric.commerce];
+  el.hidden = !(choroKey === 'commerce' && denvCurrentTag() === DENV_BASE && m && m.diverging);
+}
+
+function fillMetricOptions(){
+  var spec = CHORO[choroKey];
+  abMetricWrap.hidden = !spec;
+  syncVintageControl();
+  updateVintageNote();
+  if(!spec) return;
+  abMetricSel.innerHTML = Object.keys(spec.metrics).map(function(k){
+    return '<option value="'+esc(k)+'">'+esc(spec.metrics[k].title)+'</option>';
+  }).join('');
+  abMetricSel.value = choroMetric[choroKey];
+}
+
+try{
+  var savedDenv = parseInt(localStorage.getItem(STORE+'-denv'), 10);
+  if(!isNaN(savedDenv)) denvAt = Math.min(DENV_PICK.length-1, Math.max(0, savedDenv));
+}catch(e){}
+
+abVintageSel.addEventListener('input', function(e){
+  denvAt = parseInt(e.target.value, 10) || 0;
+  abVintageLab.textContent = denvLabel(denvCurrentTag());
+  try{ localStorage.setItem(STORE+'-denv', String(denvAt)); }catch(err){}
+  updateVintageNote();
+  drawChoro();
+});
+
+abLayerSel.value = choroKey;
+fillMetricOptions();
+
+abLayerSel.addEventListener('change', function(e){
+  choroKey = CHORO[e.target.value] ? e.target.value : '';
+  try{ localStorage.setItem(STORE+'-cholayer', choroKey); }catch(err){}
+  fillMetricOptions();
+  drawChoro();
+  status(choroKey ? CHORO[choroKey].label + ' shading on' : 'Colonia shading off');
+});
+
+abMetricSel.addEventListener('change', function(e){
+  if(!choroKey) return;
+  choroMetric[choroKey] = e.target.value;
+  try{ localStorage.setItem(STORE+'-chometric-'+choroKey, e.target.value); }catch(err){}
+  updateVintageNote();
+  drawChoro();
+});
+
+var bmSel = document.getElementById('basemap');
+bmSel.value = bmKey;
+bmSel.addEventListener('change', function(e){
+  bmKey = e.target.value;
+  try{ localStorage.setItem(STORE+'-basemap-v2', bmKey); }catch(err){}
+  applyBasemap();
+  status('Basemap: '+BASEMAPS[bmKey].name);
+});
+
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', retile);
+
+sheetMode = !!sheetUrl();
+// Sheet-backed: show the baked rows immediately, then replace them when the
+// sheet answers, so the map is never blank while the network is working.
+if(sheetMode) rows = SEED.map(function(r){ return Object.assign({}, r); });
+else load();
+applyBasemap();
+retile();
+applyMode();
+renderNets();
+renderDays();
+render();
+if(sheetMode) refreshFromSheet(true).then(applyMode);
+if(window.innerWidth<=820) document.getElementById('rail').hidden = true;
+})();
+</script>
+</body>
+</html>
