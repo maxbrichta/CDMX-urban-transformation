@@ -363,6 +363,7 @@ textarea{resize:vertical;font-family:var(--font-data);font-size:12px;line-height
           <option value="airbnb">Airbnb short-lets</option>
           <option value="commerce">Commerce — DENUE</option>
           <option value="catastro">Property &amp; construction — catastro</option>
+          <option value="platform">Platform visibility — Overture</option>
         </select>
       </label>
       <label class="fld" style="margin-top:4px" id="ab-metric-wrap" hidden>Measure
@@ -1279,6 +1280,16 @@ function renderColorBy(fields){
   sel.value = ui.colorBy;
 }
 
+/* A sheet column with many values eats the rail. Names listed here lose their
+   filter group only — the column still works for colour-by and shape-by, and
+   deleting a name from this list brings its group straight back. Matching
+   ignores case and spacing. */
+var HIDDEN_EXTRA_FILTERS = ['event type'];
+function extraFilterHidden(f){
+  var n = String(f).toLowerCase().replace(/[\s_]+/g, ' ').trim();
+  return HIDDEN_EXTRA_FILTERS.indexOf(n) >= 0;
+}
+
 /* One filter group per user-added column, rebuilt whenever the data changes. */
 function renderExtras(){
   var box = document.getElementById('extras');
@@ -1289,6 +1300,9 @@ function renderExtras(){
   colorDomain();
   box.innerHTML = '';
   Object.keys(fields).sort().forEach(function(f){
+    /* Clear any remembered exclusions first: a hidden group must not go on
+       filtering events out with no control left to undo it. */
+    if(extraFilterHidden(f)){ ui.offExtras[f] = {}; return; }
     if(!ui.offExtras[f]) ui.offExtras[f] = {};
     var counts = extraCounts(f);
     var sec = document.createElement('div');
@@ -1535,6 +1549,33 @@ var CHORO = {
         get:function(d){ return d.v; },
         fmt:function(v){ return '$'+num(Math.round(v)); }}
     }
+  },
+  /* What the apps know about, set against what the state has registered. The
+     two are different universes — Meta pages include duplicates, home-based
+     sellers and things that are not businesses, while DENUE undercounts
+     informal commerce — so the headline measure is a ratio of two counts, not
+     a share of anything, and it can and does exceed 1. */
+  platform: {
+    label: 'Platform visibility',
+    note: 'Overture Maps places, Oct 2026 · 94% Meta (Facebook/Instagram), 2.6% Microsoft, '
+        + '2.2% Foursquare · confidence ≥ 0.5 · platform entries are not businesses, and '
+        + 'a low score means invisible to the apps, not empty of commerce',
+    data: function(){ return PLAT; },
+    popup: platPopup,
+    metrics: {
+      ratio:{title:'Platform entries per registered business', breaks:[0.2,0.35,0.6,0.9], minB:50,
+        get:function(d){ return d.b ? d.n/d.b : null; },
+        fmt:function(v){ return v.toFixed(2); }},
+      density:{title:'Platform entries per km²', breaks:[50,150,350,700],
+        get:function(d,g){ return g.k ? d.n/g.k : null; },
+        fmt:function(v){ return num(Math.round(v)); }},
+      n:{title:'Platform entries', breaks:[25,75,200,500],
+        get:function(d){ return d.n; }, fmt:function(v){ return num(Math.round(v)); }},
+      food:{title:'Share that is food or drink', breaks:[15,19,23,28], minN:40,
+        unitN:'platform entries', pct:true,
+        get:function(d){ return d.n ? 100*d.f/d.n : null; },
+        fmt:function(v){ return v.toFixed(1)+'%'; }}
+    }
   }
 };
 
@@ -1683,6 +1724,7 @@ function tooThin(m, d){
   if(m.minN   && (d.n  || 0) < m.minN)   return 'under '+m.minN+' '+(m.unitN||'listings');
   if(m.minAb  && (d.a1 || 0) < m.minAb)  return 'under '+m.minAb+' corner shops';
   if(m.minN0  && (d.n0 || 0) < m.minN0)  return 'under '+m.minN0+' businesses in 2019';
+  if(m.minB   && (d.b  || 0) < m.minB)   return 'under '+m.minB+' registered businesses';
   return '';
 }
 
@@ -1731,6 +1773,22 @@ function denPopup(cp, g, d, m, thin){
   if(thin) h += '<div class="abnote">Outlined, not shaded: '+esc(thin)+
                 '. The counts above are exact.</div>';
   h += '<div class="abnote">'+esc(CHORO.commerce.note)+'</div></div>';
+  return h;
+}
+
+function platPopup(cp, g, d, m, thin){
+  var h = headRow(g, cp) + '<table class="abt">';
+  h += tr('Platform entries', num(d.n));
+  h += tr('Registered businesses', d.b ? num(d.b) : '—');
+  h += tr('Entries per business', d.b ? (d.n/d.b).toFixed(2) : '—');
+  h += tr('Food or drink', num(d.f)+pct(d.f,d.n));
+  h += tr('Carrying a brand name', num(d.c)+pct(d.c,d.n));
+  h += tr('Per km²', g.k ? num(Math.round(d.n/g.k)) : '—');
+  h += '</table>';
+  if(thin) h += '<div class="abnote">Outlined, not shaded: '+esc(thin)+
+                '. The counts above are exact.</div>';
+  h += '<div class="abnote">A ratio above 1 does not mean full coverage — the two '
+     + 'counts are different universes. '+esc(CHORO.platform.note)+'</div></div>';
   return h;
 }
 
