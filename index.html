@@ -1285,7 +1285,12 @@ function renderColorBy(fields){
    filter group only — the column still works for colour-by and shape-by, and
    deleting a name from this list brings its group straight back. Matching
    ignores case and spacing. */
-var HIDDEN_EXTRA_FILTERS = ['event type'];
+/* The date and count columns are data for analysis, not things to filter by.
+   extraFields() already skips any column with more than EXTRA_MAX_VALUES
+   distinct values, which covers them today — naming them here keeps them out
+   of the rail even if the sheet is ever filtered down to fewer values. */
+var HIDDEN_EXTRA_FILTERS = ['event type','date','first date','last date',
+                            'occurrences','median attending'];
 function extraFilterHidden(f){
   var n = String(f).toLowerCase().replace(/[\s_]+/g, ' ').trim();
   return HIDDEN_EXTRA_FILTERS.indexOf(n) >= 0;
