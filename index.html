@@ -288,7 +288,6 @@ textarea{resize:vertical;font-family:var(--font-data);font-size:12px;line-height
     <button class="btn" id="b-import">Import CSV</button>
     <button class="btn" id="b-reload" hidden>Reload sheet</button>
     <button class="btn" id="b-export">Export</button>
-    <button class="btn" id="b-src">Data source</button>
     <button class="btn" id="b-help">?</button>
     <button class="btn" id="b-theme" aria-label="Toggle theme">◐</button>
   </div>
@@ -390,6 +389,8 @@ textarea{resize:vertical;font-family:var(--font-data);font-size:12px;line-height
       <ul class="srclist">
         <li><a href="https://insideairbnb.com/get-the-data/" target="_blank" rel="noopener">Inside Airbnb</a> — short-let listings</li>
         <li><a href="https://www.inegi.org.mx/app/descarga/?ti=6" target="_blank" rel="noopener">INEGI DENUE</a> — business census, 2019 and 2025</li>
+        <li><a href="https://sig.cdmx.gob.mx/datos/descarga" target="_blank" rel="noopener">SIGCDMX catastro</a> — property and construction, 2021</li>
+        <li><a href="https://overturemaps.org" target="_blank" rel="noopener">Overture Maps</a> — online business listings, 2026</li>
         <li><a href="https://www.eventbrite.com/d/mexico--ciudad-de-mexico/eventos-cdmx/" target="_blank" rel="noopener">Eventbrite</a> — Ciudad de México</li>
         <li><a href="https://www.meetup.com/find/?location=mx--M%C3%A9xico+City&amp;source=EVENTS" target="_blank" rel="noopener">Meetup</a> — Mexico City</li>
       </ul>
@@ -2273,7 +2274,8 @@ if(addBtn) addBtn.addEventListener('click', function(){
 document.getElementById('b-import').addEventListener('click', importPanel);
 document.getElementById('b-export').addEventListener('click', exportPanel);
 document.getElementById('b-help').addEventListener('click', helpPanel);
-document.getElementById('b-src').addEventListener('click', sourcePanel);
+/* The toolbar button is gone; sourcePanel() is still reached from the tile
+   warning, which is where someone actually needs it. */
 document.getElementById('b-reload').addEventListener('click', function(){
   refreshFromSheet(false).then(applyMode);
 });
