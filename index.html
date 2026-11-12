@@ -1,6 +1,6 @@
 <!doctype html>
-<!-- build: 2026-11-12-lang · the language toggle needs this exact build -->
-<html lang="en" data-build="2026-11-12-lang">
+<!-- build: 2026-11-12-lang2 · the language toggle needs this exact build -->
+<html lang="en" data-build="2026-11-12-lang2">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -300,7 +300,6 @@ textarea{resize:vertical;font-family:var(--font-data);font-size:12px;line-height
   <button class="btn" id="rail-toggle" aria-label="Toggle filters">☰</button>
   <div class="brand">
     <h1>Mexico City <span>Urban Transformation</span></h1>
-    <p id="scope">social event networks · CDMX</p>
   </div>
   <div class="seg" role="group" aria-label="View">
     <button id="v-map" aria-pressed="true">Map</button>
@@ -308,7 +307,6 @@ textarea{resize:vertical;font-family:var(--font-data);font-size:12px;line-height
   </div>
   <div class="tools">
     <button class="btn" id="b-import">Import CSV</button>
-    <button class="btn" id="b-reload" hidden>Reload sheet</button>
     <button class="btn" id="b-export">Export</button>
     <button class="btn" id="b-help">?</button>
     <!-- Shows the language it switches TO, which is how a reader who cannot
@@ -484,7 +482,6 @@ var ES = {
   'Map': 'Mapa',
   'Data': 'Datos',
   'Import CSV': 'Importar CSV',
-  'Reload sheet': 'Recargar hoja',
   'Export': 'Exportar',
   'Toggle theme': 'Cambiar tema',
   'Switch to Spanish': 'Cambiar a español',
@@ -684,7 +681,6 @@ var ES = {
   'Reading the sheet…': 'Leyendo la hoja…',
   'Every row already has coordinates.': 'Todas las filas ya tienen coordenadas.',
   'Copied': 'Copiado',
-  'all geocoded': 'todas geocodificadas',
   'missing coords': 'sin coordenadas',
   'Add event': 'Agregar evento',
   'Submit a venue': 'Proponer un lugar',
@@ -871,8 +867,6 @@ var ES = {
   '<b>{a} of {b}</b> entries shown · ': '<b>{a} de {b}</b> registros mostrados · ',
   '{a} of {b}': '{a} de {b}',
   '{n} of 7 days': '{n} de 7 días',
-  '{n} rows · ': '{n} filas · ',
-  '{n} missing coords': '{n} sin coordenadas',
   'Show all {n} networks': 'Mostrar las {n} redes',
   ' entry': ' registro',
   ' entries': ' registros',
@@ -2030,10 +2024,6 @@ function renderStats(list, vs){
     if(!v) b.style.opacity='.18';
     bars.appendChild(b);
   });
-  var geoless = rows.filter(function(r){ return !isFinite(parseFloat(r.lat))||!isFinite(parseFloat(r.lng)); }).length;
-  document.getElementById('scope').textContent =
-    tf('{n} rows · ', {n:rows.length})+
-    (geoless ? tf('{n} missing coords', {n:geoless}) : t('all geocoded'));
 }
 
 /* ---------------------------------------------------------------
@@ -2926,7 +2916,6 @@ function applyMode(){
   var connected = sheetMode;
   var f = formUrl();
   document.getElementById('b-import').hidden = connected;
-  document.getElementById('b-reload').hidden = !connected;
   // The add button is out of the header for now. Kept null-safe so restoring
   // it is one line of markup rather than a hunt through the wiring.
   var add = document.getElementById('b-add');
@@ -3018,10 +3007,10 @@ document.getElementById('b-import').addEventListener('click', importPanel);
 document.getElementById('b-export').addEventListener('click', exportPanel);
 document.getElementById('b-help').addEventListener('click', helpPanel);
 /* The toolbar button is gone; sourcePanel() is still reached from the tile
-   warning, which is where someone actually needs it. */
-document.getElementById('b-reload').addEventListener('click', function(){
-  refreshFromSheet(false).then(applyMode);
-});
+   warning, which is where someone actually needs it. The manual Reload sheet
+   button is gone too: the page reads the sheet on every load, so the only
+   thing it added was a second way to do what opening the page already does.
+   refreshFromSheet() is still called at boot and after saving a new source. */
 document.getElementById('b-reset').addEventListener('click', function(){
   rows = SEED.map(function(r){ return Object.assign({},r); });
   save(); renderNets(); render(); status('Reset to seed rows');
