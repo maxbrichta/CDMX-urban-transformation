@@ -317,7 +317,7 @@ textarea{resize:vertical;font-family:var(--font-data);font-size:12px;line-height
 <main>
   <aside id="rail">
     <div class="rail-sec" id="views-sec">
-      <h2>Start here</h2>
+      <h2>Show me</h2>
       <div id="views"></div>
       <p id="view-note" style="font-size:11.5px;color:var(--muted);line-height:1.5;margin:2px 0 0"></p>
     </div>
@@ -2546,9 +2546,9 @@ var RC = [[19.396,-99.188],[19.434,-99.148]];   // Roma + Condesa
 var CITY = null;                                 // null = fit to visible data
 
 var VIEWS = [
-  { name:'Where the social events are',
-    note:'Every venue hosting an internationally-oriented event. Dot size is how many events that venue has held; colour is the kind of event.',
-    choro:'', metric:'', only:['Events'], color:'event type', at:RC },
+  { name:'The social infrastructure',
+    note:'Every venue hosting an internationally-oriented event. Dot size is how many events that venue has held. Also shows co-workings, co-living, and hostels.',
+    choro:'', metric:'', only:null, color:'layer', at:RC },
   { name:'Where the Airbnbs are',
     note:'Airbnb listings per km². The densest postal codes are Hipódromo, Condesa and Roma Norte — the same blocks the event circuit runs through.',
     choro:'airbnb', metric:'density', only:null, color:'layer', at:RC },
@@ -2558,8 +2558,8 @@ var VIEWS = [
   { name:'Where buildings were renewed',
     note:'Share of built surface dated 2010 or later. The cadastre records construction OR the last remodel, which is what makes this a renovation signal.',
     choro:'catastro', metric:'r2010', only:null, color:'layer', at:RC },
-  { name:'What businesses are findable online',
-    note:'Online business listings per registered business. Low is invisible to the apps, not empty of commerce. Doctores borders Roma with a third of the visibility.',
+  { name:'What businesses are findable on social media',
+    note:'Business pages on Facebook and Instagram, per business on the official register. Low is invisible to the apps, not empty of commerce. Doctores borders Roma with a third of the visibility.',
     choro:'platform', metric:'ratio', only:null, color:'layer', at:RC },
   { name:'Show me everything',
     note:'All 4 layers, no shading, filters cleared, zoomed to the full extent of the data.',
@@ -2656,7 +2656,7 @@ function foldable(){
     /* Colonia shading joins the open set because shading is now on by
        default, and its legend lives inside the section — shading with the
        legend shut away is shading nobody can read. */
-    if(localStorageMissing(id)) shut = (id!=='start-here' && id!=='search' && id!=='colonia-shading');
+    if(localStorageMissing(id)) shut = (id!=='show-me' && id!=='search' && id!=='colonia-shading');
     sec.classList.toggle('shut', shut);
     h.addEventListener('click', function(){
       var nowShut = !sec.classList.contains('shut');
