@@ -94,6 +94,27 @@ main{flex:1;display:flex;min-height:0;position:relative}
   margin:0;font-family:var(--font-data);font-size:10px;font-weight:500;
   letter-spacing:.14em;text-transform:uppercase;color:var(--muted);
 }
+/* Sections collapse so the presets have somewhere to sit without the rail
+   getting longer. The heading is the control; a caret shows the state. */
+.rail-sec h2.fold{cursor:pointer;display:flex;align-items:center;gap:6px;user-select:none}
+.rail-sec h2.fold::before{
+  content:'';width:0;height:0;flex:none;
+  border-left:4px solid currentColor;border-top:3.5px solid transparent;
+  border-bottom:3.5px solid transparent;transform:rotate(90deg);transition:transform .15s;
+}
+.rail-sec.shut h2.fold::before{transform:rotate(0deg)}
+.rail-sec h2.fold:hover{color:var(--ink)}
+.rail-sec.shut > *:not(h2){display:none}
+.rail-sec h2 .cnt{margin-left:auto;letter-spacing:0;text-transform:none;opacity:.75}
+/* Preset buttons: full-width, left-aligned, stacked. */
+.vbtn{
+  display:block;width:100%;text-align:left;padding:7px 10px;margin-bottom:5px;
+  border:1px solid var(--line);border-radius:7px;background:var(--surface-2);
+  font:inherit;font-size:13px;color:var(--ink);cursor:pointer;line-height:1.3;
+}
+.vbtn:hover{border-color:var(--accent)}
+.vbtn.on{border-color:var(--accent);box-shadow:inset 3px 0 0 var(--accent)}
+.vbtn small{display:block;font-size:10.5px;color:var(--muted);margin-top:2px}
 #q{
   width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:7px;
   background:var(--surface-2);
@@ -295,6 +316,12 @@ textarea{resize:vertical;font-family:var(--font-data);font-size:12px;line-height
 
 <main>
   <aside id="rail">
+    <div class="rail-sec" id="views-sec">
+      <h2>Start here</h2>
+      <div id="views"></div>
+      <p id="view-note" style="font-size:11.5px;color:var(--muted);line-height:1.5;margin:2px 0 0"></p>
+    </div>
+
     <div class="rail-sec">
       <h2>Search</h2>
       <input id="q" type="search" placeholder="venue, event, organizer, note…">
@@ -303,6 +330,7 @@ textarea{resize:vertical;font-family:var(--font-data);font-size:12px;line-height
         <div class="stat"><b id="s-ev">0</b><span>Entries</span></div>
         <div class="stat"><b id="s-net">0</b><span>Networks</span></div>
       </div>
+      <div id="s-frac" hidden style="font-size:11px;color:var(--muted);line-height:1.5"></div>
       <div id="colorkey" hidden></div>
     </div>
 
@@ -1289,7 +1317,7 @@ function renderColorBy(fields){
    extraFields() already skips any column with more than EXTRA_MAX_VALUES
    distinct values, which covers them today — naming them here keeps them out
    of the rail even if the sheet is ever filtered down to fewer values. */
-var HIDDEN_EXTRA_FILTERS = ['event type','date','first date','last date',
+var HIDDEN_EXTRA_FILTERS = ['event type','approved','date','first date','last date',
                             'occurrences','median attending'];
 function extraFilterHidden(f){
   var n = String(f).toLowerCase().replace(/[\s_]+/g, ' ').trim();
@@ -1327,7 +1355,7 @@ function renderExtras(){
       lab.querySelector('input').addEventListener('change', function(e){
         if(e.target.checked) delete ui.offExtras[f][v];
         else ui.offExtras[f][v] = true;
-        renderExtras(); render();
+        clearActiveView(); renderExtras(); render();
       });
       sec.appendChild(lab);
     });
@@ -1347,6 +1375,9 @@ function renderExtras(){
     sec.appendChild(btns);
     box.appendChild(sec);
   });
+  /* Sections created here appear after the boot pass, so fold them now;
+     foldable() skips any heading it has already wired. */
+  if(typeof foldable==='function') foldable();
 }
 
 function renderDays(){
@@ -1359,14 +1390,50 @@ function renderDays(){
     b.title=d;
     b.addEventListener('click',function(){
       if(ui.offDays[d]) delete ui.offDays[d]; else ui.offDays[d]=true;
-      renderDays(); render();
+      clearActiveView(); renderDays(); render();
     });
     box.appendChild(b);
   });
 }
+/* A faceted interface hides its own state: after a few clicks you are looking
+   at 40 of 816 rows with nothing saying so. The counters show the filtered
+   figure, and the line underneath says what it is a fraction of — only while
+   something is actually filtered, so the quiet case stays quiet. */
+function filterSummary(shown){
+  var parts = [];
+  var nets = Object.keys(ui.offNets).length;
+  var days = Object.keys(ui.offDays).length;
+  if(ui.q.trim()) parts.push('search "'+ui.q.trim()+'"');
+  if(nets) parts.push(nets+' network'+(nets>1?'s':'')+' hidden');
+  if(days) parts.push(days+' day'+(days>1?'s':'')+' hidden');
+  var ex = 0;
+  for(var f in ui.offExtras) ex += Object.keys(ui.offExtras[f]).length;
+  if(ex) parts.push(ex+' value'+(ex>1?'s':'')+' hidden');
+  var el = document.getElementById('s-frac');
+  if(!el) return;
+  if(!parts.length || shown >= rows.length){ el.hidden = true; return; }
+  el.hidden = false;
+  el.innerHTML = '<b>'+shown+' of '+rows.length+'</b> entries shown · '+esc(parts.join(' · '))+
+    ' <button class="btn" id="s-clear" style="padding:2px 7px;font-size:10px">clear</button>';
+  var c = document.getElementById('s-clear');
+  if(c) c.addEventListener('click', clearFilters);
+}
+
+function clearFilters(){
+  ui.q=''; ui.offNets={}; ui.offDays={}; ui.offExtras={};
+  document.getElementById('q').value='';
+  /* The highlight has to go too: clearing the filters undoes most of what a
+     preset set, so leaving it lit would claim a view the map is not in. */
+  if(typeof clearActiveView==='function') clearActiveView();
+  renderNets(); renderDays(); renderExtras(); render();
+  status('Filters cleared.');
+}
+
 function renderStats(list, vs){
   document.getElementById('s-ven').textContent = vs.length;
   document.getElementById('s-ev').textContent = list.length;
+  filterSummary(list.length);
+  if(typeof foldCounts==='function') foldCounts();
   // Count only real networks, so this agrees with the list underneath it;
   // rows with a blank network are not a seventh network.
   var ns={}; list.forEach(function(r){
@@ -1626,7 +1693,10 @@ var SERIES = {
                   + 'which is when the city hosted World Cup matches — read that step as '
                   + 'an event, not a trend.' }
 };
-var seriesAt = { commerce: DENV_PICK.length - 1, airbnb: 2 };
+/* Both default to the newest release in their own list rather than a literal
+   index, so adding a quarter or a vintage does not silently leave the slider
+   parked on an older one. */
+var seriesAt = { commerce: DENV_PICK.length - 1, airbnb: 0 };
 
 function seriesCfg(key){
   var c = SERIES[key || choroKey];
@@ -2253,13 +2323,15 @@ function helpPanel(){
 /* ---------------------------------------------------------------
    WIRING
 ----------------------------------------------------------------*/
-document.getElementById('q').addEventListener('input', function(e){ ui.q=e.target.value; render(); });
-document.getElementById('n-all').addEventListener('click', function(){ ui.offNets={}; renderNets(); render(); });
+document.getElementById('q').addEventListener('input', function(e){
+  ui.q=e.target.value; clearActiveView(); render();
+});
+document.getElementById('n-all').addEventListener('click', function(){ ui.offNets={}; clearActiveView(); renderNets(); render(); });
 document.getElementById('n-more').addEventListener('click', function(){
   netsExpanded = !netsExpanded; renderNets();
 });
 document.getElementById('n-none').addEventListener('click', function(){
-  ui.offNets={}; networks().forEach(function(n){ ui.offNets[n]=true; }); renderNets(); render();
+  ui.offNets={}; networks().forEach(function(n){ ui.offNets[n]=true; }); clearActiveView(); renderNets(); render();
 });
 document.getElementById('t-ties').addEventListener('change', function(e){ ui.ties=e.target.checked; render(); });
 document.getElementById('t-size').addEventListener('change', function(e){ ui.size=e.target.checked; render(); });
@@ -2337,8 +2409,17 @@ var abMetricWrap= document.getElementById('ab-metric-wrap');
 
 /* Remembered per dataset, so switching Airbnb -> Commerce -> Airbnb does not
    lose the measure you had chosen on each. */
-try{ choroKey = localStorage.getItem(STORE+'-cholayer') || ''; }catch(e){}
+/* A first visit opens with Airbnb shading on, at the newest extract, rather
+   than with (none): the opening frame was markers on a blank basemap, which
+   gave no sign that the shading is half of what the map is for. Someone who
+   has been here before keeps whatever they last chose — including (none), so
+   an explicit "off" is honoured rather than re-defaulted on every return. */
+var DEFAULT_CHORO = 'airbnb', DEFAULT_METRIC = 'density';
+var choroStored = null;
+try{ choroStored = localStorage.getItem(STORE+'-cholayer'); }catch(e){}
+choroKey = (choroStored === null) ? DEFAULT_CHORO : (choroStored || '');
 if(!CHORO[choroKey]) choroKey = '';
+if(choroStored === null && choroKey) choroMetric[choroKey] = DEFAULT_METRIC;
 Object.keys(CHORO).forEach(function(k){
   var saved = null;
   try{ saved = localStorage.getItem(STORE+'-chometric-'+k); }catch(e){}
@@ -2412,6 +2493,7 @@ function fillMetricOptions(){
 }
 
 Object.keys(SERIES).forEach(function(k){
+  seriesAt[k] = SERIES[k].pick.length - 1;          // newest release by default
   try{
     var saved = parseInt(localStorage.getItem(STORE+'-series-'+k), 10);
     if(!isNaN(saved)) seriesAt[k] = Math.min(SERIES[k].pick.length-1, Math.max(0, saved));
@@ -2435,6 +2517,7 @@ fillMetricOptions();
 abLayerSel.addEventListener('change', function(e){
   choroKey = CHORO[e.target.value] ? e.target.value : '';
   try{ localStorage.setItem(STORE+'-cholayer', choroKey); }catch(err){}
+  clearActiveView();
   fillMetricOptions();
   drawChoro();
   status(choroKey ? CHORO[choroKey].label + ' shading on' : 'Colonia shading off');
@@ -2447,6 +2530,170 @@ abMetricSel.addEventListener('change', function(e){
   updateVintageNote();
   drawChoro();
 });
+
+/* ---------------------------------------------------------------
+   START HERE — guided views
+   The rail can set about sixty combinations of dataset, measure and filter.
+   That is the right amount of control for Max and far too much for a first
+   visit, where the shading also starts at (none), so the opening frame is
+   markers on a grey basemap with no sign that the shading is half the point.
+   Each view is one claim: it sets the dataset, the measure, which layers are
+   showing, what colour means, and where to look. They are presets, not modes
+   — every control stays live underneath, and touching one just drops the
+   highlight.
+----------------------------------------------------------------*/
+var RC = [[19.396,-99.188],[19.434,-99.148]];   // Roma + Condesa
+var CITY = null;                                 // null = fit to visible data
+
+var VIEWS = [
+  { name:'Where the social events are',
+    note:'Every venue hosting an internationally-oriented event. Dot size is how many events that venue has held; colour is the kind of event.',
+    choro:'', metric:'', only:['Events'], color:'event type', at:RC },
+  { name:'Where the Airbnbs are',
+    note:'Airbnb listings per km². The densest postal codes are Hipódromo, Condesa and Roma Norte — the same blocks the event circuit runs through.',
+    choro:'airbnb', metric:'density', only:null, color:'layer', at:RC },
+  { name:'What changed in commerce',
+    note:'Change in cafés between the Nov 2019 and May 2025 business registers. A re-canvassed directory, not a register of openings and closings.',
+    choro:'commerce', metric:'dcafe', only:null, color:'layer', at:RC, vintage:'last' },
+  { name:'Where buildings were renewed',
+    note:'Share of built surface dated 2010 or later. The cadastre records construction OR the last remodel, which is what makes this a renovation signal.',
+    choro:'catastro', metric:'r2010', only:null, color:'layer', at:RC },
+  { name:'What businesses are findable online',
+    note:'Online business listings per registered business. Low is invisible to the apps, not empty of commerce. Doctores borders Roma with a third of the visibility.',
+    choro:'platform', metric:'ratio', only:null, color:'layer', at:RC },
+  { name:'Show me everything',
+    note:'All 4 layers, no shading, filters cleared, zoomed to the full extent of the data.',
+    choro:'', metric:'', only:null, color:'layer', at:CITY }
+];
+var activeView = -1;
+
+function renderViews(){
+  var box = document.getElementById('views');
+  if(!box) return;
+  box.innerHTML = '';
+  VIEWS.forEach(function(v,i){
+    var b = document.createElement('button');
+    b.className = 'vbtn' + (activeView===i ? ' on' : '');
+    b.innerHTML = '<span>'+esc(v.name)+'</span>';
+    b.addEventListener('click', function(){ applyView(i); });
+    box.appendChild(b);
+  });
+  var note = document.getElementById('view-note');
+  if(note) note.textContent = activeView>=0 ? VIEWS[activeView].note : '';
+}
+
+function applyView(i){
+  var v = VIEWS[i];
+  if(!v) return;
+  activeView = i;
+
+  ui.q=''; ui.offNets={}; ui.offDays={}; ui.offExtras={};
+  var qEl = document.getElementById('q'); if(qEl) qEl.value='';
+
+  /* `layer` is a sheet-supplied extra column, so hiding the other layers
+     means switching their values off rather than setting a mode. Values the
+     sheet does not actually have are skipped, so this keeps working if the
+     layer vocabulary changes. */
+  if(v.only){
+    var have = extraFields()['layer'] || [];
+    var off = {};
+    have.forEach(function(val){ if(v.only.indexOf(val)<0) off[val]=true; });
+    if(Object.keys(off).length) ui.offExtras['layer']=off;
+  }
+
+  if(v.color){ ui.colorBy = v.color; ui.colorByWant = v.color; }
+
+  choroKey = CHORO[v.choro] ? v.choro : '';
+  if(choroKey && v.metric && CHORO[choroKey].metrics[v.metric]) choroMetric[choroKey]=v.metric;
+  if(choroKey==='commerce' && v.vintage==='last' && typeof DENV!=='undefined'){
+    seriesAt.commerce = SERIES.commerce.pick.length-1;
+  }
+  try{
+    localStorage.setItem(STORE+'-cholayer', choroKey);
+    if(choroKey) localStorage.setItem(STORE+'-chometric-'+choroKey, choroMetric[choroKey]);
+  }catch(e){}
+  if(abLayerSel) abLayerSel.value = choroKey;
+  fillMetricOptions();
+  if(choroKey && abMetricSel) abMetricSel.value = choroMetric[choroKey];
+  var cb = document.getElementById('colorby'); if(cb) cb.value = ui.colorBy;
+
+  renderNets(); renderDays(); renderExtras(); renderViews(); render();
+  if(choroKey) openFold('colonia-shading');
+
+  if(v.at){ map.fitBounds(L.latLngBounds(v.at)); }
+  else {
+    var vs = venues(visible());
+    if(vs.length) map.fitBounds(L.latLngBounds(vs.map(function(x){ return [x.lat,x.lng]; })).pad(0.15));
+  }
+  status(v.name);
+}
+
+/* Any manual change drops the highlight: the view was a starting point, not a
+   state the rail has to stay inside. */
+function clearActiveView(){
+  if(activeView<0) return;
+  activeView=-1; renderViews();
+}
+
+/* ---------------------------------------------------------------
+   FOLDING
+   Six always-open sections is why the presets had nowhere to sit. Headings
+   become controls, each carries a count so a shut section still says what is
+   inside it, and the open/shut state is remembered per section.
+----------------------------------------------------------------*/
+function foldable(){
+  var secs = document.querySelectorAll('#rail .rail-sec');
+  Array.prototype.forEach.call(secs, function(sec,i){
+    var h = sec.querySelector('h2');
+    if(!h || h.classList.contains('fold')) return;
+    var id = (h.textContent||('sec'+i)).trim().toLowerCase().replace(/[^a-z]+/g,'-');
+    h.classList.add('fold');
+    sec.dataset.fold = id;
+    var shut = false;
+    try{ shut = localStorage.getItem(STORE+'-fold-'+id)==='1'; }catch(e){}
+    /* Default: the presets and the search box open, the rest shut. Someone
+       who opens a section keeps it open on the next visit. */
+    /* Colonia shading joins the open set because shading is now on by
+       default, and its legend lives inside the section — shading with the
+       legend shut away is shading nobody can read. */
+    if(localStorageMissing(id)) shut = (id!=='start-here' && id!=='search' && id!=='colonia-shading');
+    sec.classList.toggle('shut', shut);
+    h.addEventListener('click', function(){
+      var nowShut = !sec.classList.contains('shut');
+      sec.classList.toggle('shut', nowShut);
+      try{ localStorage.setItem(STORE+'-fold-'+id, nowShut?'1':'0'); }catch(e){}
+    });
+  });
+  foldCounts();
+}
+function localStorageMissing(id){
+  try{ return localStorage.getItem(STORE+'-fold-'+id)===null; }catch(e){ return true; }
+}
+/* A preset that turns a dataset on has to open the section holding its
+   controls, or it hands you shading with its measure and release slider shut
+   out of sight. Opening is not remembered: it answers this click rather than
+   overriding what the person chose to keep shut. */
+function openFold(id){
+  var sec = document.querySelector('#rail .rail-sec[data-fold="'+id+'"]');
+  if(sec) sec.classList.remove('shut');
+}
+/* A shut section should still say what it holds. */
+function foldCounts(){
+  var map_ = {
+    'networks': function(){ var n=networks().length, off=Object.keys(ui.offNets).length;
+      return off ? (n-off)+' of '+n : String(n); },
+    'colonia-shading': function(){ return choroKey ? CHORO[choroKey].label : 'off'; },
+    'weekly-rhythm': function(){ var off=Object.keys(ui.offDays).length; return off ? (7-off)+' of 7 days' : ''; }
+  };
+  Array.prototype.forEach.call(document.querySelectorAll('#rail .rail-sec'), function(sec){
+    var h=sec.querySelector('h2'); if(!h) return;
+    var id=sec.dataset.fold, f=map_[id];
+    var tag=h.querySelector('.cnt');
+    if(!f){ if(tag) tag.remove(); return; }
+    if(!tag){ tag=document.createElement('span'); tag.className='cnt'; h.appendChild(tag); }
+    tag.textContent=f();
+  });
+}
 
 var bmSel = document.getElementById('basemap');
 bmSel.value = bmKey;
@@ -2469,6 +2716,8 @@ retile();
 applyMode();
 renderNets();
 renderDays();
+renderViews();
+foldable();
 render();
 if(sheetMode) refreshFromSheet(true).then(applyMode);
 if(window.innerWidth<=820) document.getElementById('rail').hidden = true;
