@@ -310,6 +310,9 @@ textarea{resize:vertical;font-family:var(--font-data);font-size:12px;line-height
     <button class="btn" id="b-reload" hidden>Reload sheet</button>
     <button class="btn" id="b-export">Export</button>
     <button class="btn" id="b-help">?</button>
+    <!-- Shows the language it switches TO, which is how a reader who cannot
+         read the current one still finds it. -->
+    <button class="btn" id="b-lang" aria-label="Switch to Spanish" data-noi18n>ES</button>
     <button class="btn" id="b-theme" aria-label="Toggle theme">◐</button>
   </div>
 </header>
@@ -451,6 +454,420 @@ var STORE = 'circuito-rc-v1';
 /* Bumped automatically whenever you publish a standalone copy. Viewers whose
    stored stamp doesn't match get the newly published rows instead of a stale cache. */
 var SEED_STAMP = 'working-copy';
+
+/* ---------------------------------------------------------------
+   LANGUAGE
+   One dictionary keyed on the English source string, so a label is
+   translated where it is read rather than where it is written: nothing in
+   the page has to be restructured into message ids, and an untranslated
+   string falls through and still renders.
+
+   Data is never translated. Venue names, colonia names, network names and
+   event titles are what the sheet says, in whatever language it says it.
+   Only the furniture around them moves.
+
+   Two mechanisms:
+     t(s)          for strings the script composes (popups, legend, status)
+     applyLang(el) a sweep over text nodes and placeholder/title/aria-label
+                   attributes, for everything written as markup — the rail,
+                   the header and every modal panel
+   The sweep keeps each node's original English in a WeakMap, so switching
+   back is a restore rather than a reverse lookup, and running it twice over
+   the same node is a no-op.
+----------------------------------------------------------------*/
+var ES = {
+  /* --- header ------------------------------------------------------- */
+  'Mexico City': 'Ciudad de México',
+  'Urban Transformation': 'Transformación Urbana',
+  'social event networks · CDMX': 'redes de eventos sociales · CDMX',
+  'Toggle filters': 'Mostrar u ocultar filtros',
+  'View': 'Vista',
+  'Map': 'Mapa',
+  'Data': 'Datos',
+  'Import CSV': 'Importar CSV',
+  'Reload sheet': 'Recargar hoja',
+  'Export': 'Exportar',
+  'Toggle theme': 'Cambiar tema',
+  'Switch to Spanish': 'Cambiar a español',
+  'Switch to English': 'Cambiar a inglés',
+
+  /* --- rail headings ------------------------------------------------ */
+  'Show me': 'Muéstrame',
+  'Search': 'Buscar',
+  'Networks': 'Redes',
+  'Weekly rhythm': 'Ritmo semanal',
+  'Display': 'Presentación',
+  'Colonia shading': 'Sombreado por colonia',
+  'Data provided by': 'Datos proporcionados por',
+  'layer': 'capa',
+  'approved': 'aprobado',
+
+  /* --- search and counters ------------------------------------------ */
+  'venue, event, organizer, note…': 'lugar, evento, organizador, nota…',
+  'Venues': 'Lugares',
+  'Entries': 'Registros',
+  'All': 'Todas',
+  'None': 'Ninguna',
+  'Show fewer': 'Mostrar menos',
+  'show all': 'mostrar todas',
+  'clear': 'limpiar',
+  'Colour: ': 'Color: ',
+  'off': 'apagado',
+
+  /* --- display section ---------------------------------------------- */
+  'Draw organizer ties': 'Trazar vínculos de organizadores',
+  'Size venues by event count': 'Tamaño del lugar según número de eventos',
+  'Always show venue labels': 'Mostrar siempre los nombres de los lugares',
+  'Sort the filter lists': 'Ordenar las listas de filtros',
+  'A – Z': 'A – Z',
+  'most entries first': 'más registros primero',
+  'Colour the map by': 'Colorear el mapa por',
+  'network': 'red',
+  'Marker shape by': 'Forma del marcador por',
+  '(all circles)': '(todos círculos)',
+  'Basemap': 'Mapa base',
+  'Esri Light Gray': 'Esri gris claro',
+  'Esri Streets': 'Esri calles',
+  'OSM Humanitarian': 'OSM humanitario',
+  'Zoom to data': 'Acercar a los datos',
+
+  /* --- shading section ---------------------------------------------- */
+  'Dataset': 'Conjunto de datos',
+  '(none)': '(ninguno)',
+  'Measure': 'Medida',
+  'Release': 'Edición',
+  'Airbnb short-lets': 'Airbnb renta corta',
+  'Commerce — DENUE': 'Comercio — DENUE',
+  'Commerce (DENUE)': 'Comercio (DENUE)',
+  'Property & construction — catastro': 'Propiedad y construcción — catastro',
+  'Property & construction': 'Propiedad y construcción',
+  'Platform visibility — Overture': 'Visibilidad en plataformas — Overture',
+  'Platform visibility': 'Visibilidad en plataformas',
+  'DENUE release': 'Edición del DENUE',
+  'Inside Airbnb extract': 'Extracción de Inside Airbnb',
+
+  /* --- measures ----------------------------------------------------- */
+  'Listings per km²': 'Anuncios por km²',
+  'Listings': 'Anuncios',
+  'Entire homes': 'Casas o departamentos completos',
+  'Run by hosts with 5+': 'Operados por anfitriones con 5 o más',
+  'Bookable 183+ days': 'Disponibles 183 días o más',
+  'Median price': 'Precio mediano',
+  'Cafés per corner shop': 'Cafeterías por tienda de abarrotes',
+  'Cafés per km²': 'Cafeterías por km²',
+  'All businesses per km²': 'Todos los negocios por km²',
+  'Change in cafés, 2019→2025': 'Cambio en cafeterías, 2019→2025',
+  'Change in corner shops, 2019→2025': 'Cambio en tiendas de abarrotes, 2019→2025',
+  'Change in all businesses, 2019→2025': 'Cambio en el total de negocios, 2019→2025',
+  'Built or remodelled since 2010': 'Construido o remodelado desde 2010',
+  'Median year of build/remodel': 'Año mediano de construcción o remodelación',
+  'Land value per m²': 'Valor del suelo por m²',
+  'All trades: entries per business': 'Todos los giros: registros por negocio',
+  'Platform entries per km²': 'Registros en plataformas por km²',
+  'Platform entries': 'Registros en plataformas',
+  'Share that is food or drink': 'Proporción de alimentos y bebidas',
+  'Food & drink: entries per food business':
+    'Comida y bebida: registros por negocio de alimentos',
+  'Retail: entries per shop': 'Comercio al menudeo: registros por tienda',
+  'Health care: entries per practice': 'Salud: registros por consultorio',
+  'Sports & fitness: entries per gym': 'Deporte y acondicionamiento: registros por gimnasio',
+  'Food & drink': 'Comida y bebida',
+  'Retail': 'Comercio al menudeo',
+  'Health care': 'Salud',
+  'Sports & fitness': 'Deporte y acondicionamiento',
+
+  /* --- dataset notes ------------------------------------------------ */
+  'Inside Airbnb, CDMX, Sept 2026 · aggregated, no hosts or addresses':
+    'Inside Airbnb, CDMX, septiembre 2026 · agregado, sin anfitriones ni domicilios',
+  'INEGI DENUE, CDMX · Nov 2019 vs May 2025 · a re-canvassed directory, not a closings register':
+    'INEGI DENUE, CDMX · noviembre 2019 vs mayo 2025 · un directorio levantado de nuevo cada ronda, no un registro de cierres',
+  'SIGCDMX catastro, 2021 · año de construcción also records the last remodel, and land values are cadastral, so both read as relative':
+    'Catastro SIGCDMX, 2021 · el año de construcción también registra la última remodelación, y los valores del suelo son catastrales, así que ambos se leen en términos relativos',
+  'Overture Maps places, Oct 2026 · 94% Meta (Facebook/Instagram), 2.6% Microsoft, 2.2% Foursquare · confidence ≥ 0.5 · platform entries are not businesses, and a low score means invisible to the apps, not empty of commerce · the measures read it trade by trade as well as overall, because a colonia can be invisible in general and highly visible in one trade':
+    'Lugares de Overture Maps, octubre 2026 · 94% Meta (Facebook/Instagram), 2.6% Microsoft, 2.2% Foursquare · confianza ≥ 0.5 · los registros en plataformas no son negocios, y un valor bajo significa invisible para las apps, no ausencia de comercio · las medidas lo leen giro por giro además del total, porque una colonia puede ser invisible en general y muy visible en un solo giro',
+
+  /* --- slider notes ------------------------------------------------- */
+  'Compared against Nov 2019. Breaks stay fixed across releases. INEGI did not substantially re-canvass Mexico City between 2021 and 2023, so Nov 2023 stands in for that span.':
+    'Comparado contra noviembre 2019. Los cortes de color no cambian entre ediciones. El INEGI no volvió a levantar la Ciudad de México de manera sustancial entre 2021 y 2023, así que noviembre 2023 representa ese periodo.',
+  'Quarterly scrapes. Listings jump 38% between March and June 2026, which is when the city hosted World Cup matches — read that step as an event, not a trend.':
+    'Extracciones trimestrales. Los anuncios suben 38% entre marzo y junio de 2026, cuando la ciudad recibió partidos del Mundial — ese salto es un evento, no una tendencia.',
+
+  /* --- presets ------------------------------------------------------ */
+  'The social infrastructure': 'La infraestructura social',
+  'Every venue hosting an internationally-oriented event. Dot size is how many events that venue has held. Also shows co-working, co-living, and hostel locations.':
+    'Cada lugar que alberga un evento orientado al público internacional. El tamaño del punto indica cuántos eventos ha tenido ese lugar. También muestra espacios de co-working, co-living y hostales.',
+  'Where the Airbnbs are': 'Dónde están los Airbnb',
+  'Airbnb listings per km². The densest postal codes are Hipódromo, Condesa and Roma Norte — the same blocks the event circuit runs through.':
+    'Anuncios de Airbnb por km². Los códigos postales más densos son Hipódromo, Condesa y Roma Norte — las mismas cuadras por donde pasa el circuito de eventos.',
+  'What changed in commerce': 'Qué cambió en el comercio',
+  'Change in cafés between the Nov 2019 and May 2025 business registers. A re-canvassed directory, not a register of openings and closings.':
+    'Cambio en cafeterías entre los registros de negocios de noviembre 2019 y mayo 2025. Es un directorio levantado de nuevo cada ronda, no un registro de aperturas y cierres.',
+  'Where buildings were renewed': 'Dónde se renovaron los edificios',
+  'Share of built surface dated 2010 or later. The cadastre records construction OR the last remodel, which is what makes this a renovation signal.':
+    'Proporción de la superficie construida fechada en 2010 o después. El catastro registra la construcción O la última remodelación, y por eso esto funciona como señal de renovación.',
+  'What businesses are findable on social media': 'Qué negocios se encuentran en redes sociales',
+
+  /* --- popups ------------------------------------------------------- */
+  'Airbnb listings': 'Anuncios de Airbnb',
+  'Per km²': 'Por km²',
+  'Private rooms': 'Cuartos privados',
+  'Distinct hosts': 'Anfitriones distintos',
+  'Reviewed in last 12m': 'Con reseñas en los últimos 12 meses',
+  'Releases compared': 'Ediciones comparadas',
+  'All businesses': 'Todos los negocios',
+  'Cafés': 'Cafeterías',
+  'Corner shops': 'Tiendas de abarrotes',
+  'Bars (2025)': 'Bares (2025)',
+  'Restaurants (2025)': 'Restaurantes (2025)',
+  'Lodging (2025)': 'Hospedaje (2025)',
+  'Tortillerías (2025)': 'Tortillerías (2025)',
+  'Gyms (2025)': 'Gimnasios (2025)',
+  'Registered businesses': 'Negocios registrados',
+  'All trades': 'Todos los giros',
+  ' per business': ' por negocio',
+  'Carrying a brand name': 'Con nombre de marca',
+  'By trade — entries per registered business':
+    'Por giro — registros por negocio registrado',
+  'Cadastral accounts': 'Cuentas catastrales',
+  'Built surface': 'Superficie construida',
+  'Land value': 'Valor del suelo',
+  'shown': 'mostrado',
+  'Outlined, not shaded: ': 'Con contorno, sin relleno: ',
+  ', so a percentage says more about the small number than about the colonia. The counts above are exact.':
+    ', así que un porcentaje dice más sobre lo pequeño del número que sobre la colonia. Las cuentas de arriba son exactas.',
+  '. The counts above are exact.': '. Las cuentas de arriba son exactas.',
+  '. The figures above are exact.': '. Las cifras de arriba son exactas.',
+  'A ratio above 1 does not mean full coverage — the two counts are different universes. ':
+    'Una razón mayor que 1 no significa cobertura total — las dos cuentas son universos distintos. ',
+  'source ↗': 'fuente ↗',
+  'source: ': 'fuente: ',
+  '(unnamed)': '(sin nombre)',
+  '(untitled)': '(sin título)',
+  'Delete row': 'Eliminar fila',
+
+  /* --- units and gates ---------------------------------------------- */
+  'listings': 'anuncios',
+  'corner shops': 'tiendas de abarrotes',
+  'businesses in 2019': 'negocios en 2019',
+  'registered businesses': 'negocios registrados',
+  'cadastral accounts': 'cuentas catastrales',
+  'platform entries': 'registros en plataformas',
+  'food and drink businesses': 'negocios de alimentos y bebidas',
+  'registered shops': 'tiendas registradas',
+  'health practices': 'consultorios de salud',
+  'gyms and sports places': 'gimnasios y espacios deportivos',
+  'food business': 'negocio de alimentos',
+  'shop': 'tienda',
+  'practice': 'consultorio',
+  'gym': 'gimnasio',
+  'and over': 'y más',
+  'too few ': 'muy pocos ',
+
+  /* --- data provided by --------------------------------------------- */
+  '— short-let listings': '— anuncios de renta corta',
+  '— business census, 2019 and 2025': '— censo de negocios, 2019 y 2025',
+  '— property and construction, 2021': '— propiedad y construcción, 2021',
+  '— online business listings, 2026': '— registros de negocios en línea, 2026',
+  '— Ciudad de México': '— Ciudad de México',
+  '— Mexico City': '— Ciudad de México',
+  'Reset to seed rows': 'Restablecer a las filas iniciales',
+
+  /* --- slider baseline note ----------------------------------------- */
+  'Baseline release. Change measures read zero everywhere by definition, so the map shades flat. Switch Measure to a level — cafés or businesses per km² — to read Nov 2019 on its own.':
+    'Edición de referencia. Por definición las medidas de cambio valen cero en todas partes, así que el mapa se sombrea plano. Cambia la Medida a un nivel — cafeterías o negocios por km² — para leer noviembre 2019 por sí solo.',
+
+  /* --- status messages ---------------------------------------------- */
+  'Filters cleared.': 'Filtros limpiados.',
+  'Nothing to zoom to.': 'No hay nada a lo que acercarse.',
+  'Colonia shading off': 'Sombreado por colonia apagado',
+  'Add the row in the shared sheet — the map reads from it.':
+    'Agrega la fila en la hoja compartida — el mapa la lee de ahí.',
+  'Reading the sheet…': 'Leyendo la hoja…',
+  'Every row already has coordinates.': 'Todas las filas ya tienen coordenadas.',
+  'Copied': 'Copiado',
+  'all geocoded': 'todas geocodificadas',
+  'missing coords': 'sin coordenadas',
+  'Add event': 'Agregar evento',
+  'Submit a venue': 'Proponer un lugar',
+  'Add in the sheet': 'Agregar en la hoja',
+  'Connected to a shared sheet': 'Conectado a una hoja compartida',
+  '. Edits belong in the sheet, not here.': '. Las ediciones van en la hoja, no aquí.',
+  'Disconnected — back to the local working copy.':
+    'Desconectado — de vuelta a la copia de trabajo local.',
+  'Publishing needs the file served over localhost — see the ? panel.':
+    'Publicar requiere que el archivo se sirva por localhost — consulta el panel «?».',
+  'Building…': 'Construyendo…',
+  'Nothing to import — needs a header row plus at least one data row.':
+    'Nada que importar — se necesita una fila de encabezados y al menos una fila de datos.',
+
+  /* --- warnings ------------------------------------------------------ */
+  'Dismiss': 'Descartar',
+  'Data source': 'Fuente de datos',
+  'Switch to Esri': 'Cambiar a Esri',
+  'Tiles aren’t loading': 'Los mosaicos no cargan',
+  'Try another basemap. If none work, serve the file over': 'Prueba otro mapa base. Si ninguno funciona, sirve el archivo por',
+  'The provider may have changed its terms or be rate-limiting you. Try another basemap.':
+    'El proveedor pudo haber cambiado sus términos o estar limitando tus peticiones. Prueba otro mapa base.',
+
+  /* --- modal panels -------------------------------------------------- */
+  'Field guide': 'Guía de campo',
+  'How this map is meant to be fed.': 'Cómo se alimenta este mapa.',
+  'Got it': 'Entendido',
+  'Cancel': 'Cancelar',
+  'Close': 'Cerrar',
+  'Done': 'Listo',
+  'Copy': 'Copiar',
+  'Import': 'Importar',
+  'Add row': 'Agregar fila',
+  'Disconnect': 'Desconectar',
+  'Save & load': 'Guardar y cargar',
+  'Venue': 'Lugar',
+  'Colonia': 'Colonia',
+  'Address': 'Domicilio',
+  'Network / organizer': 'Red u organizador',
+  'Event name': 'Nombre del evento',
+  'Day': 'Día',
+  'Time': 'Hora',
+  'Cadence': 'Periodicidad',
+  'Access': 'Acceso',
+  'Lat': 'Lat',
+  'Lng': 'Lng',
+  'Source': 'Fuente',
+  'Notes': 'Notas',
+  'optional': 'opcional',
+  'Street, number, colonia': 'Calle, número, colonia',
+  'varies': 'variable',
+  'Add an event': 'Agregar un evento',
+  'One row per event or recurring series. Leave lat/lng blank and press Geocode afterwards.':
+    'Una fila por evento o serie recurrente. Deja lat/lng en blanco y presiona Geocodificar después.',
+  'Paste from a spreadsheet or choose a file. A header row is expected; columns are matched by name and extra columns are ignored.':
+    'Pega desde una hoja de cálculo o elige un archivo. Se espera una fila de encabezados; las columnas se emparejan por nombre y las columnas extra se ignoran.',
+  'Replace existing rows instead of appending':
+    'Reemplazar las filas existentes en lugar de agregarlas al final',
+  'Export & publish': 'Exportar y publicar',
+  'Your rows live in this browser, not in the file. To hand the map to someone else, publish a standalone copy — it carries the data inside it.':
+    'Tus filas viven en este navegador, no en el archivo. Para pasarle el mapa a alguien más, publica una copia independiente — lleva los datos dentro.',
+  'Publish standalone HTML': 'Publicar HTML independiente',
+  'Data files': 'Archivos de datos',
+  'CSV (all rows)': 'CSV (todas las filas)',
+  'CSV (filtered view)': 'CSV (vista filtrada)',
+  'GeoJSON (filtered view)': 'GeoJSON (vista filtrada)',
+  'Or copy the CSV straight out:': 'O copia el CSV directamente:',
+  'Coordinates to paste back': 'Coordenadas para pegar de vuelta',
+  'Setting up the sheet': 'Configurar la hoja'
+};
+
+/* Built once, so a translated static node can be found again when the page
+   switches back. Collisions would make the reverse ambiguous, so the first
+   English string wins and the duplicate is left alone. */
+var EN_OF = {};
+(function(){ for(var k in ES){ if(EN_OF[ES[k]] == null) EN_OF[ES[k]] = k; } })();
+
+var LANG = 'en';
+try{
+  var _ls = localStorage.getItem(STORE+'-lang');
+  if(_ls === 'es' || _ls === 'en') LANG = _ls;
+}catch(e){}
+
+function t(s){
+  if(LANG !== 'es' || s == null) return s;
+  var v = ES[String(s)];
+  return v == null ? s : v;
+}
+
+/* Interpolation stays out of the dictionary: the template carries {name}
+   placeholders so word order can move, which it has to — "3 networks hidden"
+   is "3 redes ocultas", but "under 15 shops" is "menos de 15 tiendas". */
+function tf(tpl, vals){
+  var s = t(tpl);
+  return s.replace(/\{(\w+)\}/g, function(_, k){
+    return vals[k] == null ? '' : String(vals[k]);
+  });
+}
+
+/* Plurals are two separate templates rather than a suffix rule, because
+   Spanish inflects the adjective as well as the noun. */
+function tn(n, one, many, vals){
+  vals = vals || {}; vals.n = n;
+  return tf(n === 1 ? one : many, vals);
+}
+
+var I18N_TEXT = new WeakMap();   // text node  -> original English
+var I18N_ATTR = new WeakMap();   // element    -> {attr: original English}
+var I18N_ATTRS = ['placeholder','title','aria-label'];
+
+/* #map and #table-wrap hold data, not furniture: a venue called "Data" or a
+   network called "All" must survive the sweep untouched. */
+function i18nSkip(node){
+  for(var p = node.parentNode; p; p = p.parentNode){
+    if(p.nodeType !== 1) continue;
+    if(p.id === 'map' || p.id === 'table-wrap') return true;
+    if(p.hasAttribute && p.hasAttribute('data-noi18n')) return true;
+  }
+  return false;
+}
+
+function applyLang(root){
+  root = root || document.body;
+  if(!root || !root.querySelectorAll) return;
+
+  var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null, false);
+  var nodes = [], n;
+  while((n = walker.nextNode())) nodes.push(n);
+  nodes.forEach(function(node){
+    if(i18nSkip(node)) return;
+    var orig = I18N_TEXT.has(node) ? I18N_TEXT.get(node) : node.nodeValue;
+    var key = orig.trim();
+    if(!key) return;
+    if(LANG === 'en'){
+      if(I18N_TEXT.has(node)) node.nodeValue = orig;
+      return;
+    }
+    var tr = ES[key];
+    if(tr == null) return;
+    if(!I18N_TEXT.has(node)) I18N_TEXT.set(node, orig);
+    node.nodeValue = orig.replace(key, tr);
+  });
+
+  var els = root.querySelectorAll('[placeholder],[title],[aria-label]');
+  Array.prototype.forEach.call(els, function(el){
+    if(el.closest && (el.closest('#map') || el.closest('#table-wrap'))) return;
+    var store = I18N_ATTR.get(el) || {};
+    I18N_ATTRS.forEach(function(a){
+      if(!el.hasAttribute(a) && store[a] == null) return;
+      var orig = store[a] != null ? store[a] : el.getAttribute(a);
+      if(orig == null) return;
+      if(LANG === 'en'){ if(store[a] != null) el.setAttribute(a, orig); return; }
+      var tr = ES[orig.trim()];
+      if(tr == null) return;
+      store[a] = orig; I18N_ATTR.set(el, store);
+      el.setAttribute(a, tr);
+    });
+  });
+}
+
+/* Everything the script wrote has to be rebuilt rather than swept, because
+   the sweep only reaches what is currently in the DOM and the renders hold
+   the English source. Rebuilding also re-runs the sweep on the new nodes. */
+function setLang(l){
+  LANG = (l === 'es') ? 'es' : 'en';
+  try{ localStorage.setItem(STORE+'-lang', LANG); }catch(e){}
+  document.documentElement.lang = LANG;
+  var b = document.getElementById('b-lang');
+  if(b){
+    b.textContent = LANG === 'es' ? 'EN' : 'ES';
+    b.setAttribute('aria-label', LANG === 'es' ? t('Switch to English') : 'Switch to Spanish');
+  }
+  if(typeof fillMetricOptions === 'function') fillMetricOptions();
+  if(typeof renderNets === 'function') renderNets();
+  if(typeof renderDays === 'function') renderDays();
+  if(typeof renderExtras === 'function') renderExtras();
+  if(typeof renderViews === 'function') renderViews();
+  if(typeof render === 'function') render();
+  if(typeof syncVintageControl === 'function') syncVintageControl();
+  applyLang(document.body);
+  if(typeof foldCounts === 'function') foldCounts();
+}
 
 /* ---------------------------------------------------------------
    SHARED DATA SOURCE
