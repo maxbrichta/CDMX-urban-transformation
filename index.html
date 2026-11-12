@@ -2543,7 +2543,6 @@ abMetricSel.addEventListener('change', function(e){
    highlight.
 ----------------------------------------------------------------*/
 var RC = [[19.396,-99.188],[19.434,-99.148]];   // Roma + Condesa
-var CITY = null;                                 // null = fit to visible data
 
 var VIEWS = [
   { name:'The social infrastructure',
@@ -2560,10 +2559,7 @@ var VIEWS = [
     choro:'catastro', metric:'r2010', only:null, color:'layer', at:RC },
   { name:'What businesses are findable on social media',
     note:'Business pages on Facebook and Instagram, per business on the official register. Low is invisible to the apps, not empty of commerce. Doctores borders Roma with a third of the visibility.',
-    choro:'platform', metric:'ratio', only:null, color:'layer', at:RC },
-  { name:'Show me everything',
-    note:'All 4 layers, no shading, filters cleared, zoomed to the full extent of the data.',
-    choro:'', metric:'', only:null, color:'layer', at:CITY }
+    choro:'platform', metric:'ratio', only:null, color:'layer', at:RC }
 ];
 var activeView = -1;
 
