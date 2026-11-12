@@ -1,5 +1,6 @@
 <!doctype html>
-<html lang="en">
+<!-- build: 2026-11-12-lang · the language toggle needs this exact build -->
+<html lang="en" data-build="2026-11-12-lang">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -319,13 +320,13 @@ textarea{resize:vertical;font-family:var(--font-data);font-size:12px;line-height
 
 <main>
   <aside id="rail">
-    <div class="rail-sec" id="views-sec">
+    <div class="rail-sec" id="views-sec" data-fold-id="show-me">
       <h2>Show me</h2>
       <div id="views"></div>
       <p id="view-note" style="font-size:11.5px;color:var(--muted);line-height:1.5;margin:2px 0 0"></p>
     </div>
 
-    <div class="rail-sec">
+    <div class="rail-sec" data-fold-id="search">
       <h2>Search</h2>
       <input id="q" type="search" placeholder="venue, event, organizer, note…">
       <div class="stats">
@@ -337,7 +338,7 @@ textarea{resize:vertical;font-family:var(--font-data);font-size:12px;line-height
       <div id="colorkey" hidden></div>
     </div>
 
-    <div class="rail-sec">
+    <div class="rail-sec" data-fold-id="networks">
       <h2>Networks</h2>
       <div id="nets"></div>
       <button class="btn" id="n-more" hidden></button>
@@ -349,14 +350,14 @@ textarea{resize:vertical;font-family:var(--font-data);font-size:12px;line-height
 
     <div id="extras"></div>
 
-    <div class="rail-sec">
+    <div class="rail-sec" data-fold-id="weekly-rhythm">
       <h2>Weekly rhythm</h2>
       <div class="bars" id="bars"></div>
       <div class="barlab"><span>L</span><span>M</span><span>M</span><span>J</span><span>V</span><span>S</span><span>D</span></div>
       <div class="days" id="days"></div>
     </div>
 
-    <div class="rail-sec">
+    <div class="rail-sec" data-fold-id="display">
       <h2>Display</h2>
       <label class="toggle"><input type="checkbox" id="t-ties"> Draw organizer ties</label>
       <label class="toggle"><input type="checkbox" id="t-size" checked> Size venues by event count</label>
@@ -385,7 +386,7 @@ textarea{resize:vertical;font-family:var(--font-data);font-size:12px;line-height
       <button class="btn" id="b-fit">Zoom to data</button>
     </div>
 
-    <div class="rail-sec">
+    <div class="rail-sec" data-fold-id="colonia-shading">
       <h2>Colonia shading</h2>
       <label class="fld">Dataset
         <select id="ab-layer">
@@ -407,15 +408,13 @@ textarea{resize:vertical;font-family:var(--font-data);font-size:12px;line-height
         <input type="range" id="ab-vintage" min="0" max="4" step="1" value="4"
                aria-label="DENUE release" style="width:100%;margin:4px 0 0">
         <div id="ab-vintage-ticks"></div>
-        <div id="ab-vintage-note" hidden style="margin-top:7px;padding:6px 8px;border-left:2px solid var(--accent);background:var(--surface-2);font-size:11px;color:var(--ink);line-height:1.45">Baseline
-          release. Change measures read zero everywhere by definition, so the map shades flat.
-          Switch Measure to a level — cafés or businesses per km² — to read Nov 2019 on its own.</div>
+        <div id="ab-vintage-note" hidden style="margin-top:7px;padding:6px 8px;border-left:2px solid var(--accent);background:var(--surface-2);font-size:11px;color:var(--ink);line-height:1.45">Baseline release. Change measures read zero everywhere by definition, so the map shades flat. Switch Measure to a level — cafés or businesses per km² — to read Nov 2019 on its own.</div>
         <div id="ab-vintage-blurb" style="margin-top:6px;font-size:11px;color:var(--muted);line-height:1.45"></div>
       </div>
       <div id="ab-legend" hidden></div>
     </div>
 
-    <div class="rail-sec">
+    <div class="rail-sec" data-fold-id="data-provided-by">
       <h2>Data provided by</h2>
       <ul class="srclist">
         <li><a href="https://insideairbnb.com/get-the-data/" target="_blank" rel="noopener">Inside Airbnb</a> — short-let listings</li>
@@ -511,7 +510,7 @@ var ES = {
   'Show fewer': 'Mostrar menos',
   'show all': 'mostrar todas',
   'clear': 'limpiar',
-  'Colour: ': 'Color: ',
+  'Colour: ': 'Coloreado por: ',
   'off': 'apagado',
 
   /* --- display section ---------------------------------------------- */
@@ -754,7 +753,139 @@ var ES = {
   'GeoJSON (filtered view)': 'GeoJSON (vista filtrada)',
   'Or copy the CSV straight out:': 'O copia el CSV directamente:',
   'Coordinates to paste back': 'Coordenadas para pegar de vuelta',
-  'Setting up the sheet': 'Configurar la hoja'
+  'Setting up the sheet': 'Configurar la hoja',
+  '+{n} more': '+{n} m\u00e1s',
+  'Upload the downloaded file to Netlify Drop, GitHub Pages, or any web host, and the link shows everyone your current {n} rows. Republishing refreshes it for people who already opened it.':
+    'Sube el archivo descargado a Netlify Drop, GitHub Pages o cualquier servidor web, y el enlace les muestra a todos tus {n} filas actuales. Volver a publicar lo actualiza para quienes ya lo abrieron.',
+
+  /* --- cadence and access vocabularies -------------------------------
+     These are sheet column values, so they also show up as filter chips
+     once the sheet carries those columns. */
+  'weekly': 'semanal',
+  'biweekly': 'quincenal',
+  'monthly': 'mensual',
+  'one-off': 'única vez',
+  'irregular': 'irregular',
+  'open': 'abierto',
+  'rsvp': 'con registro',
+  'invite': 'por invitación',
+  'paid': 'de paga',
+  'members': 'solo socios',
+  'fieldnote 2026-10-14 / URL / interview ID':
+    'nota de campo 2026-10-14 / URL / ID de entrevista',
+
+  /* --- field guide ---------------------------------------------------
+     Split the way the markup splits it: each run of text between inline
+     tags is its own node and so its own entry. */
+  'One row per event series.': 'Una fila por serie de eventos.',
+  'A venue becomes a hub because several rows point at it, so the circle grows on its own — don\'t pre-aggregate.':
+    'Un lugar se vuelve un nodo porque varias filas apuntan a \u00e9l, as\u00ed que el c\u00edrculo crece por su cuenta — no agregues de antemano.',
+  'is the organizing unit you care about: the collective, host, club or scene that convenes the thing. That column is what the colors and the organizer ties are built from.':
+    'es la unidad organizadora que te interesa: el colectivo, anfitri\u00f3n, club o escena que convoca. De esa columna salen los colores y los v\u00ednculos de organizadores.',
+  'Organizer ties': 'V\u00ednculos de organizadores',
+  'draw each network\'s venues back to the network\'s own centroid. A tight star means a network that stays on a few blocks; a wide one means a network that circulates.':
+    'trazan los lugares de cada red hacia el centroide de esa red. Una estrella compacta indica una red que se queda en unas cuantas cuadras; una amplia indica una red que circula.',
+  'should carry provenance: a fieldnote date, an interview ID, or a URL. Keep it filled — it is the difference between a map and an assertion.':
+    'debe llevar la procedencia: la fecha de una nota de campo, un ID de entrevista o una URL. Mantenla llena — es la diferencia entre un mapa y una afirmaci\u00f3n.',
+  'Private addresses.': 'Domicilios privados.',
+  'House parties and members-only spaces are where a lot of this actually happens. Consider recording those at block or colonia level rather than door level, and keeping the precise coordinate out of anything you publish.':
+    'Muchas de estas cosas pasan en fiestas en casas y espacios solo para socios. Considera registrarlos a nivel de cuadra o colonia en lugar de puerta, y dejar la coordenada exacta fuera de todo lo que publiques.',
+  'Sharing.': 'Compartir.',
+  'Sending someone this file alone sends an empty map — your rows are in your browser, not in the file. Use Export \u2192':
+    'Mandar este archivo solo manda un mapa vac\u00edo — tus filas est\u00e1n en tu navegador, no en el archivo. Usa Exportar \u2192',
+  ', which writes a copy with the data baked in, then upload that copy. Filter the map first if you want to publish only part of it, since publishing takes every row regardless of the current filters.':
+    ', que escribe una copia con los datos dentro, y sube esa copia. Filtra el mapa antes si quieres publicar solo una parte, porque al publicar se toman todas las filas sin importar los filtros activos.',
+  'Opening this file from disk vs. a server.': 'Abrir este archivo desde el disco o desde un servidor.',
+  'Double-clicking the file works, but the browser then sends no referer header, and several map-tile and geocoding services reject requests without one. The Esri basemaps tolerate it; OpenStreetMap\'s do not, and Nominatim geocoding may not either. To get everything working, open a terminal in this folder and run':
+    'Abrir el archivo con doble clic funciona, pero entonces el navegador no manda encabezado referer, y varios servicios de mosaicos y de geocodificaci\u00f3n rechazan las peticiones que no lo traen. Los mapas base de Esri lo toleran; los de OpenStreetMap no, y la geocodificaci\u00f3n de Nominatim tampoco. Para que todo funcione, abre una terminal en esta carpeta y ejecuta',
+  ', then load': ', luego abre',
+  'in your browser and click the file.': 'en tu navegador y haz clic en el archivo.',
+  'Data lives in this browser\'s local storage, keyed to how you opened the file — rows entered from':
+    'Los datos viven en el almacenamiento local de este navegador, ligados a c\u00f3mo abriste el archivo — las filas capturadas desde',
+  'won\'t appear when you switch to': 'no aparecer\u00e1n cuando cambies a',
+  '. Export to CSV first, then re-import on the other side.':
+    '. Exporta a CSV primero y vuelve a importar del otro lado.',
+
+  /* --- export panel --------------------------------------------------- */
+  '\u2014 CSV round-trips back into this page and opens in Sheets or Excel. GeoJSON opens in QGIS, kepler.gl, Felt or Datawrapper.':
+    '\u2014 el CSV regresa a esta p\u00e1gina sin perder nada y abre en Sheets o Excel. El GeoJSON abre en QGIS, kepler.gl, Felt o Datawrapper.',
+
+  /* --- data source panel ---------------------------------------------- */
+  'Point the map at a published Google Sheet and the sheet becomes the source of truth — everyone sees entries as soon as the sheet has them, with nothing to republish.':
+    'Apunta el mapa a una hoja de Google publicada y la hoja se vuelve la fuente de verdad — todos ven los registros en cuanto la hoja los tiene, sin necesidad de volver a publicar.',
+  'Sheet link — the ordinary': 'Enlace de la hoja — la direcci\u00f3n normal',
+  'address works best': 'es la que mejor funciona',
+  'Google Form link (optional)': 'Enlace del formulario de Google (opcional)',
+  'Make a sheet whose first row holds the column names:':
+    'Haz una hoja cuya primera fila tenga los nombres de las columnas:',
+  '. Spanish headers work too —': '. Los encabezados en espa\u00f1ol tambi\u00e9n funcionan —',
+  'and so on are recognised.': 'y as\u00ed se reconocen.',
+  'Add an': 'Agrega una columna',
+  'column (or': '(o',
+  ') if you want to vet entries. When that column exists, only rows marked yes, s\u00ed, x or true appear on the map. Leave the column out entirely and everything shows.':
+    ') si quieres revisar los registros antes. Cuando esa columna existe, solo aparecen en el mapa las filas marcadas yes, s\u00ed, x o true. Omite la columna por completo y todo se muestra.',
+  'Share it: click': 'Comp\u00e1rtela: haz clic en',
+  'Share': 'Compartir',
+  ', set': ', pon',
+  'General access': 'Acceso general',
+  'Anyone with the link': 'Cualquier persona con el enlace',
+  'Viewer': 'Lector',
+  ', then copy the address from your browser bar and paste it above. Publish-to-web links work too, but the plain address is more reliable — it carries the sheet id, which gives the map a second way in.':
+    ', luego copia la direcci\u00f3n de la barra del navegador y p\u00e9gala arriba. Los enlaces de publicar en la web tambi\u00e9n sirven, pero la direcci\u00f3n simple es m\u00e1s confiable — lleva el id de la hoja, que le da al mapa una segunda forma de entrar.',
+  'For a form, build it in Google Forms with question titles matching the column names, send responses to this sheet, and paste the form link above. Collaborators then get a Submit button instead of the editing tools.':
+    'Para un formulario, constr\u00fayelo en Google Forms con t\u00edtulos de pregunta que coincidan con los nombres de las columnas, manda las respuestas a esta hoja y pega el enlace del formulario arriba. Los colaboradores entonces ven un bot\u00f3n de Enviar en lugar de las herramientas de edici\u00f3n.',
+
+  /* --- the sheet's own controlled vocabulary -------------------------
+     Column names and layer values are furniture a reader has to read, so
+     they are translated for display while the sheet keeps its own words
+     and every filter still keys on the untranslated value. Network names
+     are proper nouns and are left alone. */
+  'Events': 'Eventos',
+  'Co-working': 'Co-working',
+  'Co-living': 'Co-living',
+  'Hostels': 'Hostales',
+  'event type': 'tipo de evento',
+  'colonia': 'colonia',
+
+  /* --- day names ---------------------------------------------------- */
+  'Mon': 'Lun', 'Tue': 'Mar', 'Wed': 'Mié', 'Thu': 'Jue',
+  'Fri': 'Vie', 'Sat': 'Sáb', 'Sun': 'Dom',
+
+  /* --- data table column headings ----------------------------------- */
+  'venue': 'lugar', 'address': 'domicilio', 'lat': 'lat', 'lng': 'lng',
+  'event': 'evento', 'day': 'día', 'time': 'hora', 'cadence': 'periodicidad',
+  'access': 'acceso', 'source': 'fuente', 'notes': 'notas',
+
+  /* --- templates ----------------------------------------------------
+     Placeholders rather than concatenation, because Spanish moves the
+     number and inflects the noun and its adjective together. */
+  'under {n} {unit}': 'menos de {n} {unit}',
+  'under {v}': 'menos de {v}',
+  'search "{q}"': 'búsqueda "{q}"',
+  '{n} network hidden': '{n} red oculta',
+  '{n} networks hidden': '{n} redes ocultas',
+  '{n} day hidden': '{n} día oculto',
+  '{n} days hidden': '{n} días ocultos',
+  '{n} value hidden': '{n} valor oculto',
+  '{n} values hidden': '{n} valores ocultos',
+  '<b>{a} of {b}</b> entries shown · ': '<b>{a} de {b}</b> registros mostrados · ',
+  '{a} of {b}': '{a} de {b}',
+  '{n} of 7 days': '{n} de 7 días',
+  '{n} rows · ': '{n} filas · ',
+  '{n} missing coords': '{n} sin coordenadas',
+  'Show all {n} networks': 'Mostrar las {n} redes',
+  ' entry': ' registro',
+  ' entries': ' registros',
+  ' — centroid of {n} venues': ' — centroide de {n} lugares',
+  'Loaded {n} row from the sheet.': 'Se cargó {n} fila de la hoja.',
+  'Loaded {n} rows from the sheet.': 'Se cargaron {n} filas de la hoja.',
+  'Basemap: {name}': 'Mapa base: {name}',
+  'Geocoding {a} of {b} — {what}': 'Geocodificando {a} de {b} — {what}',
+  'Geocoded {n} row': 'Se geocodificó {n} fila',
+  'Geocoded {n} rows': 'Se geocodificaron {n} filas',
+  ' · {n} not found — fill lat/lng by hand':
+    ' · {n} no encontradas — llena lat/lng a mano',
+  '{name} shading on': 'Sombreado de {name} activado'
 };
 
 /* Built once, so a translated static node can be found again when the page
@@ -798,13 +929,25 @@ var I18N_ATTRS = ['placeholder','title','aria-label'];
 
 /* #map and #table-wrap hold data, not furniture: a venue called "Data" or a
    network called "All" must survive the sweep untouched. */
+var I18N_NEVER = {SCRIPT:1, STYLE:1, NOSCRIPT:1, TEXTAREA:1};
 function i18nSkip(node){
   for(var p = node.parentNode; p; p = p.parentNode){
     if(p.nodeType !== 1) continue;
+    /* A page's own source is text too: without this the sweep would rewrite
+       script bodies whose text happened to match a dictionary key. */
+    if(I18N_NEVER[p.tagName]) return true;
     if(p.id === 'map' || p.id === 'table-wrap') return true;
     if(p.hasAttribute && p.hasAttribute('data-noi18n')) return true;
   }
   return false;
+}
+/* Markup wraps lines, so the same sentence reaches here with different
+   whitespace than the dictionary holds. Match on a collapsed copy and
+   substitute the text as it actually appears. */
+function i18nLookup(key){
+  var v = ES[key];
+  if(v != null) return v;
+  return ES[key.replace(/\s+/g, ' ')];
 }
 
 function applyLang(root){
@@ -823,10 +966,10 @@ function applyLang(root){
       if(I18N_TEXT.has(node)) node.nodeValue = orig;
       return;
     }
-    var tr = ES[key];
-    if(tr == null) return;
+    var tx = i18nLookup(key);
+    if(tx == null) return;
     if(!I18N_TEXT.has(node)) I18N_TEXT.set(node, orig);
-    node.nodeValue = orig.replace(key, tr);
+    node.nodeValue = orig.replace(key, tx);
   });
 
   var els = root.querySelectorAll('[placeholder],[title],[aria-label]');
@@ -838,10 +981,10 @@ function applyLang(root){
       var orig = store[a] != null ? store[a] : el.getAttribute(a);
       if(orig == null) return;
       if(LANG === 'en'){ if(store[a] != null) el.setAttribute(a, orig); return; }
-      var tr = ES[orig.trim()];
-      if(tr == null) return;
+      var tx = i18nLookup(orig.trim());
+      if(tx == null) return;
       store[a] = orig; I18N_ATTR.set(el, store);
-      el.setAttribute(a, tr);
+      el.setAttribute(a, tx);
     });
   });
 }
@@ -853,6 +996,11 @@ function setLang(l){
   LANG = (l === 'es') ? 'es' : 'en';
   try{ localStorage.setItem(STORE+'-lang', LANG); }catch(e){}
   document.documentElement.lang = LANG;
+  document.title = t('Mexico City')+' — '+t('Urban Transformation');
+  /* A status message was composed in the language it was shown in; the sweep
+     cannot reverse it, so drop it rather than leave it stranded. */
+  var st = document.getElementById('status');
+  if(st){ st.hidden = true; st.textContent = ''; }
   var b = document.getElementById('b-lang');
   if(b){
     b.textContent = LANG === 'es' ? 'EN' : 'ES';
@@ -1174,7 +1322,8 @@ async function refreshFromSheet(quiet){
     rows = out;
     sheetFetchedAt = new Date();
     renderNets(); render();
-    if(!quiet) status('Loaded '+rows.length+' row'+(rows.length===1?'':'s')+' from the sheet.');
+    if(!quiet) status(tn(rows.length, 'Loaded {n} row from the sheet.',
+                                      'Loaded {n} rows from the sheet.'));
     else status(null);
     sheetBanner(null);
   }catch(e){
@@ -1341,9 +1490,9 @@ function tileWarning(b){
   el.querySelector('#w-x').addEventListener('click', hideTileWarning);
 }
 function isDark(){
-  var t = document.documentElement.getAttribute('data-theme');
-  if(t==='dark') return true;
-  if(t==='light') return false;
+  var th = document.documentElement.getAttribute('data-theme');
+  if(th==='dark') return true;
+  if(th==='light') return false;
   return window.matchMedia('(prefers-color-scheme: dark)').matches;
 }
 function retile(){
@@ -1540,7 +1689,7 @@ function drawMap(){
     html += '</ul></div>';
     mk.bindPopup(html,{maxWidth:320});
 
-    var unit = n===1 ? ' entry' : ' entries';
+    var unit = n===1 ? t(' entry') : t(' entries');
     if(ui.labels){
       mk.bindTooltip(v.venue,{permanent:true,direction:'top',
         offset:[0, ui.shapeBy ? -2 : -r-2], className:'vlabel'});
@@ -1579,7 +1728,7 @@ function drawTies(list){
     });
     tieLayer.addLayer(L.circleMarker(c,{
       radius:4, color:colorOf(n), weight:2, fillColor:colorOf(n), fillOpacity:.25
-    }).bindTooltip(n+' — centroid of '+up.length+' venues',{direction:'top'}));
+    }).bindTooltip(n+tf(' — centroid of {n} venues', {n:up.length}),{direction:'top'}));
   });
 }
 
@@ -1610,12 +1759,17 @@ function renderColorKey(){
   });
   if(!vals.length){ el.hidden = true; return; }
   var show = vals.slice(0, 10);
-  var html = '<div class="lgd-t">Colour: '+esc(ui.colorBy)+'</div><div class="ck">';
+  var html = '<div class="lgd-t">'+esc(t('Colour: '))+esc(t(ui.colorBy))+'</div><div class="ck">';
   show.forEach(function(v){
-    html += '<span><i style="background:'+colorOf(v)+'"></i>'+esc(v)+'</span>';
+    /* A value here can be a network name, so it is data: translate only
+       what the controlled vocabularies cover, never the free-text column. */
+    html += '<span><i style="background:'+colorOf(v)+'"></i>'+
+            (ui.colorBy === 'network'
+              ? '<span data-noi18n>'+esc(v)+'</span>'
+              : esc(t(v)))+'</span>';
   });
   if(vals.length > show.length){
-    html += '<span class="more">+'+(vals.length-show.length)+' more</span>';
+    html += '<span class="more">'+esc(tf('+{n} more', {n:vals.length-show.length}))+'</span>';
   }
   el.innerHTML = html + '</div>';
   el.hidden = false;
@@ -1655,7 +1809,7 @@ function renderNets(){
     if(listed.length > NET_CAP){
       more.hidden = false;
       more.textContent = netsExpanded
-        ? 'Show fewer' : ('Show all ' + listed.length + ' networks');
+        ? t('Show fewer') : tf('Show all {n} networks', {n:listed.length});
     } else {
       more.hidden = true;
     }
@@ -1665,7 +1819,7 @@ function renderNets(){
     lab.className = 'net' + (ui.offNets[n]?' off':'');
     lab.innerHTML = '<input type="checkbox"'+(ui.offNets[n]?'':' checked')+'>'+
       (ui.colorBy === 'network' ? '<span class="dot" style="background:'+colorOf(n)+'"></span>' : '')+
-      '<span class="nm">'+esc(n)+'</span><span class="ct">'+(counts[n]||0)+'</span>';
+      '<span class="nm" data-noi18n>'+esc(n)+'</span><span class="ct">'+(counts[n]||0)+'</span>';
     lab.querySelector('input').addEventListener('change',function(e){
       if(e.target.checked) delete ui.offNets[n]; else ui.offNets[n]=true;
       renderNets(); render();
@@ -1758,8 +1912,9 @@ function renderExtras(){
     var counts = extraCounts(f);
     var sec = document.createElement('div');
     sec.className = 'rail-sec';
+    sec.dataset.foldId = f;          // the sheet's own column name, untranslated
     var h = document.createElement('h2');
-    h.textContent = f;
+    h.textContent = t(f);
     sec.appendChild(h);
 
     fields[f].forEach(function(v){
@@ -1767,7 +1922,7 @@ function renderExtras(){
       lab.className = 'net' + (ui.offExtras[f][v] ? ' off' : '');
       lab.innerHTML = '<input type="checkbox"'+(ui.offExtras[f][v]?'':' checked')+'>'+
         (ui.colorBy === f ? '<span class="dot" style="background:'+colorOf(v)+'"></span>' : '')+
-        '<span class="nm">'+esc(v)+'</span>'+
+        '<span class="nm">'+esc(t(v))+'</span>'+
         '<span class="ct">'+(counts[v]||0)+'</span>';
       lab.querySelector('input').addEventListener('change', function(e){
         if(e.target.checked) delete ui.offExtras[f][v];
@@ -1779,8 +1934,8 @@ function renderExtras(){
 
     var btns = document.createElement('div');
     btns.style.cssText = 'display:flex;gap:6px';
-    btns.innerHTML = '<button class="btn" style="flex:1">All</button>'+
-                     '<button class="btn" style="flex:1">None</button>';
+    btns.innerHTML = '<button class="btn" style="flex:1">'+esc(t('All'))+'</button>'+
+                     '<button class="btn" style="flex:1">'+esc(t('None'))+'</button>';
     btns.children[0].addEventListener('click', function(){
       ui.offExtras[f] = {}; renderExtras(); render();
     });
@@ -1795,6 +1950,9 @@ function renderExtras(){
   /* Sections created here appear after the boot pass, so fold them now;
      foldable() skips any heading it has already wired. */
   if(typeof foldable==='function') foldable();
+  /* These nodes were just written from English literals, so translate them
+     now rather than waiting for the next language switch. */
+  if(typeof applyLang==='function') applyLang(document.getElementById('rail'));
 }
 
 function renderDays(){
@@ -1802,9 +1960,9 @@ function renderDays(){
   box.innerHTML='';
   DAYS.forEach(function(d){
     var b=document.createElement('button');
-    b.className='day'; b.textContent=d.slice(0,2);
+    b.className='day'; b.textContent=t(d).slice(0,2);
     b.setAttribute('aria-pressed', ui.offDays[d] ? 'false':'true');
-    b.title=d;
+    b.title=t(d);
     b.addEventListener('click',function(){
       if(ui.offDays[d]) delete ui.offDays[d]; else ui.offDays[d]=true;
       clearActiveView(); renderDays(); render();
@@ -1820,18 +1978,20 @@ function filterSummary(shown){
   var parts = [];
   var nets = Object.keys(ui.offNets).length;
   var days = Object.keys(ui.offDays).length;
-  if(ui.q.trim()) parts.push('search "'+ui.q.trim()+'"');
-  if(nets) parts.push(nets+' network'+(nets>1?'s':'')+' hidden');
-  if(days) parts.push(days+' day'+(days>1?'s':'')+' hidden');
+  if(ui.q.trim()) parts.push(tf('search "{q}"', {q:ui.q.trim()}));
+  if(nets) parts.push(tn(nets, '{n} network hidden', '{n} networks hidden'));
+  if(days) parts.push(tn(days, '{n} day hidden',     '{n} days hidden'));
   var ex = 0;
   for(var f in ui.offExtras) ex += Object.keys(ui.offExtras[f]).length;
-  if(ex) parts.push(ex+' value'+(ex>1?'s':'')+' hidden');
+  if(ex) parts.push(tn(ex, '{n} value hidden', '{n} values hidden'));
   var el = document.getElementById('s-frac');
   if(!el) return;
   if(!parts.length || shown >= rows.length){ el.hidden = true; return; }
   el.hidden = false;
-  el.innerHTML = '<b>'+shown+' of '+rows.length+'</b> entries shown · '+esc(parts.join(' · '))+
-    ' <button class="btn" id="s-clear" style="padding:2px 7px;font-size:10px">clear</button>';
+  el.innerHTML = tf('<b>{a} of {b}</b> entries shown · ', {a:shown, b:rows.length})+
+    esc(parts.join(' · '))+
+    ' <button class="btn" id="s-clear" style="padding:2px 7px;font-size:10px">'+
+    esc(t('clear'))+'</button>';
   var c = document.getElementById('s-clear');
   if(c) c.addEventListener('click', clearFilters);
 }
@@ -1843,7 +2003,7 @@ function clearFilters(){
      preset set, so leaving it lit would claim a view the map is not in. */
   if(typeof clearActiveView==='function') clearActiveView();
   renderNets(); renderDays(); renderExtras(); render();
-  status('Filters cleared.');
+  status(t('Filters cleared.'));
 }
 
 function renderStats(list, vs){
@@ -1866,13 +2026,14 @@ function renderStats(list, vs){
     var b=document.createElement('div');
     b.className='bar';
     b.style.height = Math.round((v/max)*100)+'%';
-    b.title = DAYS[i]+': '+v;
+    b.title = t(DAYS[i])+': '+v;
     if(!v) b.style.opacity='.18';
     bars.appendChild(b);
   });
   var geoless = rows.filter(function(r){ return !isFinite(parseFloat(r.lat))||!isFinite(parseFloat(r.lng)); }).length;
   document.getElementById('scope').textContent =
-    rows.length+' rows · '+(geoless?geoless+' missing coords':'all geocoded');
+    tf('{n} rows · ', {n:rows.length})+
+    (geoless ? tf('{n} missing coords', {n:geoless}) : t('all geocoded'));
 }
 
 /* ---------------------------------------------------------------
@@ -1880,11 +2041,12 @@ function renderStats(list, vs){
 ----------------------------------------------------------------*/
 function drawTable(){
   var wrap = document.getElementById('table-wrap');
-  var t = document.createElement('table');
+  var tbl = document.createElement('table');
   var thead = document.createElement('thead');
   var hr = document.createElement('tr');
-  hr.innerHTML = '<th></th>' + COLS.map(function(c){ return '<th>'+c+'</th>'; }).join('') + '<th></th>';
-  thead.appendChild(hr); t.appendChild(thead);
+  hr.innerHTML = '<th></th>' +
+    COLS.map(function(c){ return '<th>'+esc(t(c))+'</th>'; }).join('') + '<th></th>';
+  thead.appendChild(hr); tbl.appendChild(thead);
 
   var tb = document.createElement('tbody');
   rows.forEach(function(r, i){
@@ -1900,9 +2062,9 @@ function drawTable(){
       (sheetMode ? '<td></td>' : '<td><button class="del" data-del="'+i+'" title="Delete row">×</button></td>');
     tb.appendChild(tr);
   });
-  t.appendChild(tb);
+  tbl.appendChild(tb);
   wrap.innerHTML='';
-  wrap.appendChild(t);
+  wrap.appendChild(tbl);
 
   wrap.querySelectorAll('td[contenteditable]').forEach(function(td){
     td.addEventListener('blur', function(){
@@ -2168,9 +2330,19 @@ function tagIndex(cfg, tag){
   for(var i=0;i<tags.length;i++) if(tags[i][0] === tag) return i;
   return -1;
 }
+/* Release labels come out of the payload as "Nov 2019". Spanish writes months
+   lowercase and abbreviates them differently, so the month is swapped and the
+   year left alone rather than adding 24 dictionary entries. */
+var MONTH_ES = {Jan:'ene', Feb:'feb', Mar:'mar', Apr:'abr', May:'may', Jun:'jun',
+                Jul:'jul', Aug:'ago', Sep:'sep', Oct:'oct', Nov:'nov', Dec:'dic'};
+function monthLabel(s){
+  if(LANG !== 'es' || !s) return s;
+  return String(s).replace(/\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\b/g,
+    function(m){ return MONTH_ES[m] || m; });
+}
 function tagLabel(cfg, tag){
   var i = tagIndex(cfg, tag);
-  return i < 0 ? tag : cfg.store().tags[i][1];
+  return i < 0 ? tag : monthLabel(cfg.store().tags[i][1]);
 }
 function currentTag(key){
   var k = key || choroKey, cfg = seriesCfg(k);
@@ -2229,12 +2401,15 @@ function vintageTitle(m){
   var cfg = seriesCfg();
   if(!cfg) return m;
   var cur = tagLabel(cfg, currentTag());
-  var t = m.title;
-  if(cfg.base && /^Change in/.test(t)) t = t.replace(/,.*$/, ', ' + tagLabel(cfg, cfg.base) + ' → ' + cur);
-  else t = t + ' · ' + cur;
+  /* Translate before composing: the release suffix is appended to the
+     finished label, so a composed title would never match the dictionary. */
+  var ttl = t(m.title);
+  if(cfg.base && /^Change in/.test(m.title))
+    ttl = ttl.replace(/,.*$/, ', ' + tagLabel(cfg, cfg.base) + ' → ' + cur);
+  else ttl = ttl + ' · ' + cur;
   var o = {};
   for(var k in m) o[k] = m[k];
-  o.title = t;
+  o.title = ttl;
   return o;
 }
 
@@ -2257,12 +2432,13 @@ function abClass(v, breaks){
 
 /* A polygon is outlined rather than filled when its denominator is too small
    for the measure to mean anything. The counts in the popup are still exact. */
+function gateText(n, unit){ return tf('under {n} {unit}', {n:n, unit:t(unit)}); }
 function tooThin(m, d){
-  if(m.minN   && (d.n  || 0) < m.minN)   return 'under '+m.minN+' '+(m.unitN||'listings');
-  if(m.minAb  && (d.a1 || 0) < m.minAb)  return 'under '+m.minAb+' corner shops';
-  if(m.minN0  && (d.n0 || 0) < m.minN0)  return 'under '+m.minN0+' businesses in 2019';
-  if(m.minB   && (d.b  || 0) < m.minB)   return 'under '+m.minB+' registered businesses';
-  if(m.minF   && (d[m.minF.k] || 0) < m.minF.v) return 'under '+m.minF.v+' '+m.minF.t;
+  if(m.minN   && (d.n  || 0) < m.minN)   return gateText(m.minN,  m.unitN||'listings');
+  if(m.minAb  && (d.a1 || 0) < m.minAb)  return gateText(m.minAb, 'corner shops');
+  if(m.minN0  && (d.n0 || 0) < m.minN0)  return gateText(m.minN0, 'businesses in 2019');
+  if(m.minB   && (d.b  || 0) < m.minB)   return gateText(m.minB,  'registered businesses');
+  if(m.minF   && (d[m.minF.k] || 0) < m.minF.v) return gateText(m.minF.v, m.minF.t);
   return '';
 }
 
@@ -2270,7 +2446,9 @@ function headRow(g, cp){
   return '<div class="pop"><h3>'+esc(g.n)+'</h3>'+
     '<div class="addr">'+esc(g.a||'')+' · CP '+esc(cp)+' · '+(g.k||0).toFixed(2)+' km²</div>';
 }
-function tr(k, v){ return '<tr><th>'+k+'</th><td>'+v+'</td></tr>'; }
+/* Every choropleth popup row goes through here, so translating the key
+   here covers all of them at once. Values are data and stay put. */
+function tr(k, v){ return '<tr><th>'+t(k)+'</th><td>'+v+'</td></tr>'; }
 
 function abnbPopup(cp, g, d, m, thin){
   var h = headRow(g, cp) + '<table class="abt">';
@@ -2284,10 +2462,10 @@ function abnbPopup(cp, g, d, m, thin){
   h += tr('Reviewed in last 12m', num(d.r)+pct(d.r,d.n));
   h += tr('Median price', d.d==null ? '—' : '$'+num(d.d)+' MXN');
   h += '</table>';
-  if(thin) h += '<div class="abnote">Outlined, not shaded: '+esc(thin)+
-                ', so a percentage says more about the small number than about '+
-                'the colonia. The counts above are exact.</div>';
-  h += '<div class="abnote">'+esc(CHORO.airbnb.note)+'</div></div>';
+  if(thin) h += '<div class="abnote">'+esc(t('Outlined, not shaded: '))+esc(thin)+
+                esc(t(', so a percentage says more about the small number than about '+
+                      'the colonia. The counts above are exact.'))+'</div>';
+  h += '<div class="abnote">'+esc(t(CHORO.airbnb.note))+'</div></div>';
   return h;
 }
 
@@ -2308,9 +2486,9 @@ function denPopup(cp, g, d, m, thin){
   h += tr('Tortillerías (2025)', num(d.t1));
   h += tr('Gyms (2025)', num(d.g1));
   h += '</table>';
-  if(thin) h += '<div class="abnote">Outlined, not shaded: '+esc(thin)+
-                '. The counts above are exact.</div>';
-  h += '<div class="abnote">'+esc(CHORO.commerce.note)+'</div></div>';
+  if(thin) h += '<div class="abnote">'+esc(t('Outlined, not shaded: '))+esc(thin)+
+                esc(t('. The counts above are exact.'))+'</div>';
+  h += '<div class="abnote">'+esc(t(CHORO.commerce.note))+'</div></div>';
   return h;
 }
 
@@ -2318,7 +2496,7 @@ function platPopup(cp, g, d, m, thin){
   var h = headRow(g, cp) + '<table class="abt">';
   h += tr('Platform entries', num(d.n));
   h += tr('Registered businesses', d.b ? num(d.b) : '—');
-  h += tr('All trades', d.b ? (d.n/d.b).toFixed(2)+' per business' : '—');
+  h += tr('All trades', d.b ? (d.n/d.b).toFixed(2)+t(' per business') : '—');
   h += tr('Carrying a brand name', num(d.c)+pct(d.c,d.n));
   h += tr('Per km²', g.k ? num(Math.round(d.n/g.k)) : '—');
   h += '</table>';
@@ -2326,20 +2504,24 @@ function platPopup(cp, g, d, m, thin){
      ratio and the per-trade ones diverge often enough that showing only the
      active measure would hide the more interesting number. */
   h += '<table class="abt"><tr><th colspan="2" style="padding-top:6px">'
-     + 'By trade — entries per registered business</th></tr>';
+     + esc(t('By trade — entries per registered business'))+'</th></tr>';
   for(var i=0;i<PLAT_CATS.length;i++){
     var c = PLAT_CATS[i], den = d[c.k+'b'] || 0, cur = (m && m.cat === c.k);
-    var lab = esc(c.label) + (cur ? ' <span style="opacity:.6">· shown</span>' : '');
+    var lab = esc(t(c.label)) +
+      (cur ? ' <span style="opacity:.6">· '+esc(t('shown'))+'</span>' : '');
     var val = den < c.gate
-      ? '<span style="opacity:.55">too few ' + esc(c.units) + ' (' + num(den) + ')</span>'
+      ? '<span style="opacity:.55">' + esc(t('too few ')) + esc(t(c.units)) +
+        ' (' + num(den) + ')</span>'
       : (d[c.k]/den).toFixed(2) + ' <span style="opacity:.6">(' + num(d[c.k]) + ' / ' + num(den) + ')</span>';
     h += '<tr><th'+(cur?' style="font-weight:600"':'')+'>'+lab+'</th><td>'+val+'</td></tr>';
   }
   h += '</table>';
-  if(thin) h += '<div class="abnote">Outlined, not shaded: '+esc(thin)+
-                '. The counts above are exact.</div>';
-  h += '<div class="abnote">A ratio above 1 does not mean full coverage — the two '
-     + 'counts are different universes. '+esc(CHORO.platform.note)+'</div></div>';
+  if(thin) h += '<div class="abnote">'+esc(t('Outlined, not shaded: '))+esc(thin)+
+                esc(t('. The counts above are exact.'))+'</div>';
+  h += '<div class="abnote">'
+     + esc(t('A ratio above 1 does not mean full coverage — the two '
+           + 'counts are different universes. '))
+     + esc(t(CHORO.platform.note))+'</div></div>';
   return h;
 }
 
@@ -2351,9 +2533,9 @@ function catPopup(cp, g, d, m, thin){
   h += tr('Median year of build/remodel', d.y);
   h += tr('Land value', '$'+num(Math.round(d.v))+' / m²');
   h += '</table>';
-  if(thin) h += '<div class="abnote">Outlined, not shaded: '+esc(thin)+
-                '. The figures above are exact.</div>';
-  h += '<div class="abnote">'+esc(CHORO.catastro.note)+'</div></div>';
+  if(thin) h += '<div class="abnote">'+esc(t('Outlined, not shaded: '))+esc(thin)+
+                esc(t('. The figures above are exact.'))+'</div>';
+  h += '<div class="abnote">'+esc(t(CHORO.catastro.note))+'</div></div>';
   return h;
 }
 
@@ -2403,23 +2585,25 @@ function drawChoro(){
 function choroLegend(spec, m, ramp){
   var el = document.getElementById('ab-legend');
   if(!el) return;
-  var b = m.breaks, out = '<div class="lgd-t">'+esc(m.title)+'</div>';
+  var b = m.breaks, out = '<div class="lgd-t">'+esc(t(m.title))+'</div>';
   /* Contrast against the basemap is below 3:1 at the pale end by design, so
      the class labels carry the reading rather than the fill alone. */
   for(var i=ramp.length-1;i>=0;i--){
     var lab;
-    if(i === 0)              lab = 'under '+m.fmt(b[0]);
-    else if(i === b.length)  lab = m.fmt(b[b.length-1])+' and over';
+    if(i === 0)              lab = tf('under {v}', {v:m.fmt(b[0])});
+    else if(i === b.length)  lab = m.fmt(b[b.length-1])+' '+t('and over');
     else                     lab = m.fmt(b[i-1])+' – '+m.fmt(b[i]);
     out += '<div class="ab-row"><span class="ab-sw" style="background:'+ramp[i]+'"></span>'+lab+'</div>';
   }
-  var gate = m.minN ? ('under '+m.minN+' '+(m.unitN||'listings'))
-           : m.minAb ? ('under '+m.minAb+' corner shops')
-           : m.minN0 ? ('under '+m.minN0+' businesses in 2019') : '';
+  var gate = m.minN  ? gateText(m.minN,  m.unitN||'listings')
+           : m.minAb ? gateText(m.minAb, 'corner shops')
+           : m.minN0 ? gateText(m.minN0, 'businesses in 2019')
+           : m.minB  ? gateText(m.minB,  'registered businesses')
+           : m.minF  ? gateText(m.minF.v, m.minF.t) : '';
   if(gate){
     out += '<div class="ab-row"><span class="ab-sw none" style="border-color:'+ramp[2]+'"></span>'+gate+'</div>';
   }
-  out += '<p class="note" style="margin:7px 0 0">'+esc(spec.note)+'.</p>';
+  out += '<p class="note" style="margin:7px 0 0">'+esc(t(spec.note))+'.</p>';
   el.innerHTML = out;
   el.hidden = false;
 }
@@ -2503,13 +2687,14 @@ async function geocodeMissing(){
     .filter(function(x){
       return (!isFinite(parseFloat(x.r.lat))||!isFinite(parseFloat(x.r.lng))) && (x.r.address||x.r.venue);
     });
-  if(!todo.length){ status('Every row already has coordinates.'); return; }
+  if(!todo.length){ status(t('Every row already has coordinates.')); return; }
   var done=0, failed=0;
   for(var k=0;k<todo.length;k++){
     var r = todo[k].r;
     var qs = [r.venue, r.address, r.colonia, 'Ciudad de México, México']
       .filter(Boolean).join(', ');
-    status('Geocoding '+(k+1)+' of '+todo.length+' — '+(r.venue||r.address), true);
+    status(tf('Geocoding {a} of {b} — {what}',
+                 {a:k+1, b:todo.length, what:(r.venue||r.address)}), true);
     try{
       var url = 'https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=mx'+
         '&viewbox=-99.20,19.45,-99.13,19.38&bounded=1&q='+encodeURIComponent(qs);
@@ -2521,7 +2706,8 @@ async function geocodeMissing(){
     await sleep(1100);
   }
   save(); renderNets(); render();
-  status('Geocoded '+done+' row'+(done===1?'':'s')+(failed?' · '+failed+' not found — fill lat/lng by hand':''));
+  status(tn(done, 'Geocoded {n} row', 'Geocoded {n} rows')+
+         (failed ? tf(' · {n} not found — fill lat/lng by hand', {n:failed}) : ''));
   // Sheet-backed rows aren't saved anywhere, so hand the results back for pasting.
   if(sheetMode && done){
     coordsPanel(todo.map(function(x){ return x.r; }).filter(function(r){ return r.lat && r.lng; }));
@@ -2540,6 +2726,9 @@ function panel(html){
     if(e.key==='Escape'){ scrim.remove(); document.removeEventListener('keydown', esc); }
   });
   document.body.appendChild(scrim);
+  /* The panel was just written in English; the sweep reaches it only now
+     that it is in the document. */
+  if(typeof applyLang === 'function') applyLang(scrim);
   return scrim;
 }
 
@@ -2608,7 +2797,7 @@ function importPanel(){
     var txt = p.querySelector('#i-text').value.trim();
     if(!txt){ p.remove(); return; }
     var grid = parseCSV(txt);
-    if(grid.length<2){ status('Nothing to import — needs a header row plus at least one data row.'); return; }
+    if(grid.length<2){ status(t('Nothing to import — needs a header row plus at least one data row.')); return; }
     var head = grid[0].map(function(h){ return h.trim().toLowerCase(); });
     var fresh = grid.slice(1).map(function(g){
       var o={};
@@ -2631,7 +2820,7 @@ function importPanel(){
    browser storage, which is per-person and never travels with a link. */
 async function exportStandalone(btn){
   if(location.protocol === 'file:'){
-    status('Publishing needs the file served over localhost — see the ? panel.');
+    status(t('Publishing needs the file served over localhost — see the ? panel.'));
     return;
   }
   var old = btn.textContent;
@@ -2668,7 +2857,9 @@ function exportPanel(){
     '<div class="row-end" style="justify-content:flex-start;margin:0 0 6px">'+
       '<button class="btn primary" id="e-html">Publish standalone HTML</button>'+
     '</div>'+
-    '<p class="sub">Upload the downloaded file to Netlify Drop, GitHub Pages, or any web host, and the link shows everyone your current '+rows.length+' rows. Republishing refreshes it for people who already opened it.</p>'+
+    '<p class="sub">'+tf('Upload the downloaded file to Netlify Drop, GitHub Pages, or any '+
+      'web host, and the link shows everyone your current {n} rows. Republishing '+
+      'refreshes it for people who already opened it.', {n:rows.length})+'</p>'+
     '<p class="sub" style="margin:16px 0 6px"><b>Data files</b> — CSV round-trips back into this page and opens in Sheets or Excel. GeoJSON opens in QGIS, kepler.gl, Felt or Datawrapper.</p>'+
     '<div class="row-end" style="justify-content:flex-start">'+
       '<button class="btn" id="e-csv">CSV (all rows)</button>'+
@@ -2718,7 +2909,7 @@ function sourcePanel(){
     try{ localStorage.setItem(STORE+'-sheet',''); localStorage.setItem(STORE+'-form',''); }catch(e){}
     p.remove();
     sheetMode = false; applyMode(); load(); renderNets(); render();
-    status('Disconnected — back to the local working copy.');
+    status(t('Disconnected — back to the local working copy.'));
   });
   p.querySelector('#s-save').addEventListener('click', function(){
     var s = p.querySelector('#s-sheet').value.trim();
@@ -2771,7 +2962,7 @@ function coordsPanel(list){
   p.querySelector('#c-copy').addEventListener('click', function(){
     var ta = p.querySelector('#c-text');
     if(navigator.clipboard && navigator.clipboard.writeText){
-      navigator.clipboard.writeText(csv).then(function(){ status('Copied'); },
+      navigator.clipboard.writeText(csv).then(function(){ status(t('Copied')); },
         function(){ ta.select(); });
     } else { ta.select(); }
   });
@@ -2813,7 +3004,7 @@ document.getElementById('t-size').addEventListener('change', function(e){ ui.siz
 document.getElementById('t-lab').addEventListener('change', function(e){ ui.labels=e.target.checked; render(); });
 document.getElementById('b-fit').addEventListener('click', function(){
   var vs = venues(visible());
-  if(!vs.length){ status('Nothing to zoom to.'); return; }
+  if(!vs.length){ status(t('Nothing to zoom to.')); return; }
   map.fitBounds(L.latLngBounds(vs.map(function(v){ return [v.lat,v.lng]; })).pad(0.18));
 });
 var addBtn = document.getElementById('b-add');
@@ -2821,7 +3012,7 @@ if(addBtn) addBtn.addEventListener('click', function(){
   if(!sheetMode){ addPanel(); return; }
   var f = formUrl();
   if(f) window.open(f, '_blank', 'noopener');
-  else status('Add the row in the shared sheet — the map reads from it.');
+  else status(t('Add the row in the shared sheet — the map reads from it.'));
 });
 document.getElementById('b-import').addEventListener('click', importPanel);
 document.getElementById('b-export').addEventListener('click', exportPanel);
@@ -2919,9 +3110,9 @@ function syncVintageControl(){
   document.getElementById('ab-vintage-blurb').textContent = cfg.note;
   document.getElementById('ab-vintage-ticks').innerHTML =
     '<div style="display:flex;justify-content:space-between;font-size:10px;opacity:.6">' +
-    cfg.pick.map(function(t){
-      var L = tagLabel(cfg, t);                   // "Nov 2019" -> "N’19"
-      return '<span>' + esc(L.charAt(0) + '’' + L.slice(-2)) + '</span>';
+    cfg.pick.map(function(tg){                  // not `t`: that is the translator
+      var L = tagLabel(cfg, tg);                  // "Nov 2019" -> "N’19"
+      return '<span>' + esc(L.charAt(0).toUpperCase() + '’' + L.slice(-2)) + '</span>';
     }).join('') +
     '</div>';
 }
@@ -2962,7 +3153,7 @@ function fillMetricOptions(){
   updateVintageNote();
   if(!spec) return;
   abMetricSel.innerHTML = Object.keys(spec.metrics).map(function(k){
-    return '<option value="'+esc(k)+'">'+esc(spec.metrics[k].title)+'</option>';
+    return '<option value="'+esc(k)+'">'+esc(t(spec.metrics[k].title))+'</option>';
   }).join('');
   abMetricSel.value = choroMetric[choroKey];
 }
@@ -2995,7 +3186,8 @@ abLayerSel.addEventListener('change', function(e){
   clearActiveView();
   fillMetricOptions();
   drawChoro();
-  status(choroKey ? CHORO[choroKey].label + ' shading on' : 'Colonia shading off');
+  status(choroKey ? tf('{name} shading on', {name:t(CHORO[choroKey].label)})
+                  : t('Colonia shading off'));
 });
 
 abMetricSel.addEventListener('change', function(e){
@@ -3045,12 +3237,12 @@ function renderViews(){
   VIEWS.forEach(function(v,i){
     var b = document.createElement('button');
     b.className = 'vbtn' + (activeView===i ? ' on' : '');
-    b.innerHTML = '<span>'+esc(v.name)+'</span>';
+    b.innerHTML = '<span>'+esc(t(v.name))+'</span>';
     b.addEventListener('click', function(){ applyView(i); });
     box.appendChild(b);
   });
   var note = document.getElementById('view-note');
-  if(note) note.textContent = activeView>=0 ? VIEWS[activeView].note : '';
+  if(note) note.textContent = activeView>=0 ? t(VIEWS[activeView].note) : '';
 }
 
 function applyView(i){
@@ -3096,7 +3288,7 @@ function applyView(i){
     var vs = venues(visible());
     if(vs.length) map.fitBounds(L.latLngBounds(vs.map(function(x){ return [x.lat,x.lng]; })).pad(0.15));
   }
-  status(v.name);
+  status(t(v.name));
 }
 
 /* Any manual change drops the highlight: the view was a starting point, not a
@@ -3117,7 +3309,10 @@ function foldable(){
   Array.prototype.forEach.call(secs, function(sec,i){
     var h = sec.querySelector('h2');
     if(!h || h.classList.contains('fold')) return;
-    var id = (h.textContent||('sec'+i)).trim().toLowerCase().replace(/[^a-z]+/g,'-');
+    /* The id must not move when the heading is translated, so the markup
+       states it and only a dynamically built section falls back to the text. */
+    var id = sec.dataset.foldId ||
+             (h.textContent||('sec'+i)).trim().toLowerCase().replace(/[^a-z]+/g,'-');
     h.classList.add('fold');
     sec.dataset.fold = id;
     var shut = false;
@@ -3152,9 +3347,10 @@ function openFold(id){
 function foldCounts(){
   var map_ = {
     'networks': function(){ var n=networks().length, off=Object.keys(ui.offNets).length;
-      return off ? (n-off)+' of '+n : String(n); },
-    'colonia-shading': function(){ return choroKey ? CHORO[choroKey].label : 'off'; },
-    'weekly-rhythm': function(){ var off=Object.keys(ui.offDays).length; return off ? (7-off)+' of 7 days' : ''; }
+      return off ? tf('{a} of {b}', {a:n-off, b:n}) : String(n); },
+    'colonia-shading': function(){ return choroKey ? t(CHORO[choroKey].label) : t('off'); },
+    'weekly-rhythm': function(){ var off=Object.keys(ui.offDays).length;
+      return off ? tf('{n} of 7 days', {n:7-off}) : ''; }
   };
   Array.prototype.forEach.call(document.querySelectorAll('#rail .rail-sec'), function(sec){
     var h=sec.querySelector('h2'); if(!h) return;
@@ -3172,7 +3368,7 @@ bmSel.addEventListener('change', function(e){
   bmKey = e.target.value;
   try{ localStorage.setItem(STORE+'-basemap-v2', bmKey); }catch(err){}
   applyBasemap();
-  status('Basemap: '+BASEMAPS[bmKey].name);
+  status(tf('Basemap: {name}', {name:t(BASEMAPS[bmKey].name)}));
 });
 
 window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', retile);
@@ -3190,6 +3386,15 @@ renderDays();
 renderViews();
 foldable();
 render();
+/* Language last, so the sweep runs over a fully built rail. setLang also
+   re-runs every renderer, which is what picks up the script-composed
+   strings the DOM sweep cannot reach. */
+console.log('CDMX map build: ' + (document.documentElement.dataset.build || 'unstamped'));
+var langBtn = document.getElementById('b-lang');
+if(langBtn) langBtn.addEventListener('click', function(){
+  setLang(LANG === 'es' ? 'en' : 'es');
+});
+setLang(LANG);
 if(sheetMode) refreshFromSheet(true).then(applyMode);
 if(window.innerWidth<=820) document.getElementById('rail').hidden = true;
 })();
