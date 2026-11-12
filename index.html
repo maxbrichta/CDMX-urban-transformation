@@ -1554,6 +1554,44 @@ function signed(v){ return (v>0?'+':'') + num(v); }
    minAb / minN gate the ratios: "3 cafés per abarrote" out of one abarrote
    says more about the denominator than the colonia, so those polygons are
    outlined instead of filled. */
+
+/* The platform layer read trade by trade. Each entry pairs one Overture
+   top-level taxonomy category with the DENUE sector that counts the same kind
+   of business, so numerator and denominator describe one trade instead of the
+   whole economy — which matters, because the overall ratio tracks the
+   per-trade ones only loosely (r = 0.61 to 0.89). Centro reads 0.37 overall
+   but 1.23 on food; Doctores reads 0.44 overall but 1.73 on health care.
+   gate is the smallest number of registered businesses in that sector worth
+   shading, and it differs by trade because the trades differ in how common
+   they are: gyms are rare everywhere, shops are everywhere. Breaks sit near
+   the 20th/40th/60th/80th percentiles of each trade's own distribution, so a
+   colour means the same thing — unusually visible for this trade — across all
+   five measures. */
+var PLAT_CATS = [
+  {k:'fd', label:'Food & drink',     unit:'food business', units:'food and drink businesses',
+   gate:15, breaks:[0.40,0.55,0.75,1.00]},
+  {k:'rt', label:'Retail',           unit:'shop',          units:'registered shops',
+   gate:25, breaks:[0.06,0.10,0.17,0.30]},
+  {k:'hc', label:'Health care',      unit:'practice',      units:'health practices',
+   gate:15, breaks:[0.30,0.45,0.60,0.90]},
+  {k:'sp', label:'Sports & fitness', unit:'gym',           units:'gyms and sports places',
+   gate:10, breaks:[1.00,1.40,1.85,2.55]}
+];
+var PLAT_CAT = {};
+for(var _pc=0;_pc<PLAT_CATS.length;_pc++) PLAT_CAT[PLAT_CATS[_pc].k] = PLAT_CATS[_pc];
+
+function platCatMetric(key){
+  var c = PLAT_CAT[key];
+  return {
+    title: c.label+': entries per '+c.unit,
+    breaks: c.breaks,
+    cat: c.k,
+    minF: {k:c.k+'b', v:c.gate, t:c.units},
+    get: function(d){ return d[c.k+'b'] ? d[c.k]/d[c.k+'b'] : null; },
+    fmt: function(v){ return v.toFixed(2); }
+  };
+}
+
 var CHORO = {
   airbnb: {
     label: 'Airbnb short-lets',
@@ -1632,13 +1670,19 @@ var CHORO = {
     label: 'Platform visibility',
     note: 'Overture Maps places, Oct 2026 · 94% Meta (Facebook/Instagram), 2.6% Microsoft, '
         + '2.2% Foursquare · confidence ≥ 0.5 · platform entries are not businesses, and '
-        + 'a low score means invisible to the apps, not empty of commerce',
+        + 'a low score means invisible to the apps, not empty of commerce · the measures '
+        + 'read it trade by trade as well as overall, because a colonia can be invisible '
+        + 'in general and highly visible in one trade',
     data: function(){ return PLAT; },
     popup: platPopup,
     metrics: {
-      ratio:{title:'Platform entries per registered business', breaks:[0.2,0.35,0.6,0.9], minB:50,
+      ratio:{title:'All trades: entries per business', breaks:[0.2,0.35,0.6,0.9], minB:50,
         get:function(d){ return d.b ? d.n/d.b : null; },
         fmt:function(v){ return v.toFixed(2); }},
+      fd: platCatMetric('fd'),
+      rt: platCatMetric('rt'),
+      hc: platCatMetric('hc'),
+      sp: platCatMetric('sp'),
       density:{title:'Platform entries per km²', breaks:[50,150,350,700],
         get:function(d,g){ return g.k ? d.n/g.k : null; },
         fmt:function(v){ return num(Math.round(v)); }},
@@ -1801,6 +1845,7 @@ function tooThin(m, d){
   if(m.minAb  && (d.a1 || 0) < m.minAb)  return 'under '+m.minAb+' corner shops';
   if(m.minN0  && (d.n0 || 0) < m.minN0)  return 'under '+m.minN0+' businesses in 2019';
   if(m.minB   && (d.b  || 0) < m.minB)   return 'under '+m.minB+' registered businesses';
+  if(m.minF   && (d[m.minF.k] || 0) < m.minF.v) return 'under '+m.minF.v+' '+m.minF.t;
   return '';
 }
 
@@ -1856,10 +1901,23 @@ function platPopup(cp, g, d, m, thin){
   var h = headRow(g, cp) + '<table class="abt">';
   h += tr('Platform entries', num(d.n));
   h += tr('Registered businesses', d.b ? num(d.b) : '—');
-  h += tr('Entries per business', d.b ? (d.n/d.b).toFixed(2) : '—');
-  h += tr('Food or drink', num(d.f)+pct(d.f,d.n));
+  h += tr('All trades', d.b ? (d.n/d.b).toFixed(2)+' per business' : '—');
   h += tr('Carrying a brand name', num(d.c)+pct(d.c,d.n));
   h += tr('Per km²', g.k ? num(Math.round(d.n/g.k)) : '—');
+  h += '</table>';
+  /* Every trade, every time, with the one being shaded marked. The overall
+     ratio and the per-trade ones diverge often enough that showing only the
+     active measure would hide the more interesting number. */
+  h += '<table class="abt"><tr><th colspan="2" style="padding-top:6px">'
+     + 'By trade — entries per registered business</th></tr>';
+  for(var i=0;i<PLAT_CATS.length;i++){
+    var c = PLAT_CATS[i], den = d[c.k+'b'] || 0, cur = (m && m.cat === c.k);
+    var lab = esc(c.label) + (cur ? ' <span style="opacity:.6">· shown</span>' : '');
+    var val = den < c.gate
+      ? '<span style="opacity:.55">too few ' + esc(c.units) + ' (' + num(den) + ')</span>'
+      : (d[c.k]/den).toFixed(2) + ' <span style="opacity:.6">(' + num(d[c.k]) + ' / ' + num(den) + ')</span>';
+    h += '<tr><th'+(cur?' style="font-weight:600"':'')+'>'+lab+'</th><td>'+val+'</td></tr>';
+  }
   h += '</table>';
   if(thin) h += '<div class="abnote">Outlined, not shaded: '+esc(thin)+
                 '. The counts above are exact.</div>';
@@ -2546,7 +2604,7 @@ var RC = [[19.396,-99.188],[19.434,-99.148]];   // Roma + Condesa
 
 var VIEWS = [
   { name:'The social infrastructure',
-    note:'Every venue hosting an internationally-oriented event. Dot size is how many events that venue has held. Also shows co-workings, co-living, and hostels.',
+    note:'Every venue hosting an internationally-oriented event. Dot size is how many events that venue has held. Also shows co-working, co-living, and hostel locations.',
     choro:'', metric:'', only:null, color:'layer', at:RC },
   { name:'Where the Airbnbs are',
     note:'Airbnb listings per km². The densest postal codes are Hipódromo, Condesa and Roma Norte — the same blocks the event circuit runs through.',
