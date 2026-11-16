@@ -189,15 +189,6 @@ details[open] .caret{transform:rotate(45deg)}
         advertised to foreigners.</p>
       </div>
       <div class="block limits">
-        <p class="label">Where it falls short</p>
-        <p>This is a census of what is advertised in public, and mostly in English.
-        House parties, invitation-only groups and Spanish-language neighborhood
-        organizing are absent, and they are not small. The sample is also shaped by
-        where it was gathered: Meetup and Eventbrite index some scenes thoroughly
-        and others not at all. Read it as the <em>findable</em> circuit, not the
-        whole social world.</p>
-      </div>
-      <div class="block limits">
         <p class="label">Data limitations</p>
         <p>There are several networks that do not publicly post the locations of
         their events, such as
@@ -427,6 +418,18 @@ details[open] .caret{transform:rotate(45deg)}
     </ul>
   </div>
 </div>
+
+<script>
+(function(){
+  function closeAll(){
+    var d = document.querySelectorAll('details');
+    for (var i = 0; i < d.length; i++) d[i].open = false;
+  }
+  closeAll();
+  // bfcache restores can bring the old state back on a later visit
+  window.addEventListener('pageshow', closeAll);
+})();
+</script>
 
 </body>
 </html>
