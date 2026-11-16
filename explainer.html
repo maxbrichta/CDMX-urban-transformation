@@ -1,0 +1,427 @@
+<title>Reading the CDMX Map</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one reading column of disclosure panels, one per map view. Tokens are
+   lifted verbatim from the map's own stylesheet so the two read as one object
+   when they sit on the same page. */
+:root{
+  --bg:#F3F5F8; --surface:#FFFFFF; --surface-2:#EDF0F5;
+  --ink:#141821; --muted:#5B6474; --line:#D9DFE8;
+  --accent:#D81B60; --accent-ink:#FFFFFF;
+  --font-ui:'Archivo',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --font-data:'IBM Plex Mono',ui-monospace,'SF Mono',Menlo,monospace;
+  /* the map's sequential ramp, for the magnitude layers */
+  --r1:#EDE8DF; --r2:#C2B29A; --r3:#96825F; --r4:#63533A; --r5:#33291B;
+  /* and its diverging ramp, for the one layer that runs either side of zero */
+  --d1:#44697C; --d2:#9DB9C6; --d3:#F0ECE4; --d4:#E3AD7A; --d5:#97511F;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0E1118; --surface:#161B24; --surface-2:#1E2531;
+    --ink:#E7EBF2; --muted:#98A2B4; --line:#2A3240;
+    --accent:#FF5285; --accent-ink:#17060D;
+    --r1:#2E2921; --r2:#5E5443; --r3:#948569; --r4:#C6B48D; --r5:#F2E6C6;
+    --d1:#93C2DA; --d2:#4F7E99; --d3:#3E3A33; --d4:#8F6B42; --d5:#DCA868;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0E1118; --surface:#161B24; --surface-2:#1E2531;
+  --ink:#E7EBF2; --muted:#98A2B4; --line:#2A3240;
+  --accent:#FF5285; --accent-ink:#17060D;
+  --r1:#2E2921; --r2:#5E5443; --r3:#948569; --r4:#C6B48D; --r5:#F2E6C6;
+  --d1:#93C2DA; --d2:#4F7E99; --d3:#3E3A33; --d4:#8F6B42; --d5:#DCA868;
+  color-scheme:dark;
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0;background:var(--bg);color:var(--ink);
+  font-family:var(--font-ui);font-size:15px;line-height:1.55;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{
+  max-width:760px;margin:0 auto;
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px));
+  padding-block:28px 36px;
+}
+a{color:var(--accent)}
+a:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:4px}
+
+/* ---------- intro ---------- */
+.eyebrow{
+  font-family:var(--font-data);font-size:10px;font-weight:500;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--muted);
+  margin:0 0 10px;
+}
+h1{
+  margin:0 0 12px;font-size:23px;font-weight:700;letter-spacing:-.015em;
+  line-height:1.2;text-wrap:balance;
+}
+.lede{margin:0 0 6px;color:var(--muted);font-size:14.5px}
+.lede strong{color:var(--ink);font-weight:600}
+.rule{height:1px;background:var(--line);margin:26px 0 4px;border:0}
+
+/* ---------- panels ---------- */
+details{border-bottom:1px solid var(--line)}
+details:first-of-type{border-top:1px solid var(--line)}
+summary{
+  display:flex;align-items:flex-start;gap:12px;
+  padding:16px 2px;cursor:pointer;list-style:none;transition:color .12s;
+}
+summary::-webkit-details-marker{display:none}
+summary:hover{color:var(--accent)}
+.caret{
+  flex:none;width:11px;height:11px;margin-top:6px;
+  border-right:1.6px solid var(--muted);border-bottom:1.6px solid var(--muted);
+  transform:rotate(-45deg);transition:transform .16s;
+}
+details[open] .caret{transform:rotate(45deg)}
+.sum-text{min-width:0;flex:1}
+.sum-title{font-size:16px;font-weight:600;letter-spacing:-.01em;display:block}
+.sum-dek{display:block;font-size:13px;color:var(--muted);margin-top:2px}
+
+/* the strip repeats the color ramp this layer actually uses on the map, so a
+   reader can match a panel to a legend without being told which is which */
+.ramp{flex:none;display:flex;width:52px;height:11px;margin-top:6px;border-radius:2px;overflow:hidden}
+.ramp i{flex:1}
+.dots{flex:none;display:flex;gap:3px;margin-top:7px;width:52px}
+.dots i{width:8px;height:8px;border-radius:50%}
+
+.body{padding:0 2px 22px 23px}
+@media (max-width:460px){ .body{padding-left:2px} }
+.block{margin:0 0 16px}
+.block:last-child{margin-bottom:0}
+.label{
+  font-family:var(--font-data);font-size:10px;font-weight:500;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--muted);
+  margin:0 0 5px;
+}
+.block p{margin:0 0 9px}
+.block p:last-child{margin-bottom:0}
+.limits{
+  border-left:2px solid var(--accent);background:var(--surface-2);
+  padding:12px 14px;border-radius:0 5px 5px 0;
+}
+.limits .label{color:var(--accent)}
+.num{font-variant-numeric:tabular-nums}
+
+/* ---------- closing ---------- */
+.closing{margin-top:30px;padding-top:4px}
+.closing h2{
+  font-family:var(--font-data);font-size:10px;font-weight:500;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--muted);
+  margin:0 0 12px;
+}
+.closing ul{margin:0;padding-left:18px;color:var(--muted);font-size:14px}
+.closing li{margin-bottom:9px}
+.closing li:last-child{margin-bottom:0}
+.closing strong{color:var(--ink);font-weight:600}
+</style>
+
+<div class="wrap">
+  <p class="eyebrow">Mexico City · Urban Transformation</p>
+  <h1>What each view of the map shows</h1>
+  <p class="lede">The map has five views. Each measures a different traces the
+  rearrangement of a few central colonias (neighborhoods) around people who work
+  remotely and coordinate their social/economic lives around platforms. Each does
+  it with a different instrument and a different blind spot.</p>
+  <p class="lede"><strong>None of them measures digital nomads.</strong> There is no
+  register of those. Every layer measures infrastructure; the step from
+  infrastructure to people is the argument, not the data.</p>
+
+  <hr class="rule">
+
+  <details name="layer" open>
+    <summary>
+      <span class="caret"></span>
+      <span class="sum-text">
+        <span class="sum-title">The social infrastructure</span>
+        <span class="sum-dek">Venues hosting internationally-oriented events, plus co-working, co-living and hostels</span>
+      </span>
+      <span class="dots" aria-hidden="true">
+        <i style="background:#D81B60"></i><i style="background:#2D7DD2"></i>
+        <i style="background:#E8A33D"></i><i style="background:#2F9E6E"></i>
+        <i style="background:#8A5CF5"></i>
+      </span>
+    </summary>
+    <div class="body">
+      <div class="block">
+        <p class="label">What's on the map</p>
+        <p>Venues in the dataset that have hosted internationally-oriented events,
+        such as language exchanges, run clubs, founder meetups, parties, speed
+        dating, and other social gatherings. Also shows known co-working spaces,
+        co-livings, and hostels. The dot size reflects how many events that venue
+        has held, so a café running a weekly event grows into a hub while a one-off
+        venue stays small.</p>
+      </div>
+      <div class="block">
+        <p class="label">What it says about platformization</p>
+        <p>This social substratum is visible because it is platform-mediated. Events
+        are advertised and discovered on Meetup, Eventbrite, Instagram and WhatsApp.
+        According to interviews with digital nomads and expats, this social event
+        network has grown drastically since the pandemic, when the city saw an influx
+        of foreigners. Platforms shape the local economy by bringing these social
+        networks into physical locations that economically benefit from hosting them.</p>
+      </div>
+      <div class="block">
+        <p class="label">How to read it</p>
+        <p>Look at concentration rather than individual dots. The circuit does not
+        spread evenly across the city. It clusters around the Roma, Condesa, and
+        Juárez colonias, and keeps returning to the same addresses. Some of the
+        locations host events from multiple networks.</p>
+      </div>
+      <div class="block">
+        <p class="label">How the data is gathered</p>
+        <p>The data primarily comes from weekly postings on Eventbrite and Meetup.
+        Additional data is purposively scraped from organizer Instagram accounts
+        using the open source tool
+        <a href="https://bellingcat.gitbook.io/toolkit/more/all-tools/zeeschuimer" target="_blank" rel="noopener">Zeeschuimer</a>.
+        Event are selected for their international audience orientation, either
+        because they are posted in English or because they specifically are
+        advertised to foreigners.</p>
+      </div>
+      <div class="block limits">
+        <p class="label">Where it falls short</p>
+        <p>This is a census of what is advertised in public, and mostly in English.
+        House parties, invitation-only groups and Spanish-language neighborhood
+        organizing are absent, and they are not small. The sample is also shaped by
+        where it was gathered: Meetup and Eventbrite index some scenes thoroughly
+        and others not at all. Read it as the <em>findable</em> circuit, not the
+        whole social world.</p>
+      </div>
+      <div class="block limits">
+        <p class="label">Data limitations</p>
+        <p>There are several networks that do not publicly post the locations of
+        their events, such as
+        <a href="https://www.fightclubcdmx.com/" target="_blank" rel="noopener">Fight Club</a>,
+        and other events that are posted on Luma, which is not accessible for
+        automated scraping. Data collection started in October 2026.</p>
+      </div>
+    </div>
+  </details>
+
+  <details name="layer">
+    <summary>
+      <span class="caret"></span>
+      <span class="sum-text">
+        <span class="sum-title">Where the Airbnbs are</span>
+        <span class="sum-dek">Short-let listings per km², by postal code, across quarterly scrapes</span>
+      </span>
+      <span class="ramp" aria-hidden="true">
+        <i style="background:var(--r1)"></i><i style="background:var(--r2)"></i>
+        <i style="background:var(--r3)"></i><i style="background:var(--r4)"></i>
+        <i style="background:var(--r5)"></i>
+      </span>
+    </summary>
+    <div class="body">
+      <div class="block">
+        <p class="label">What's on the map</p>
+        <p>Short-let listings per square kilometer in each postal code, from
+        <a href="https://insideairbnb.com/get-the-data/" target="_blank" rel="noopener">Inside Airbnb</a>.
+        The slider steps through quarterly scrapes to show the changes in listings
+        throughout the year.</p>
+      </div>
+      <div class="block">
+        <p class="label">What it says about platformization</p>
+        <p>As a platform Airbnb takes housing built and regulated as housing and
+        re-prices it as a nightly product. The densest postal codes (Hipódromo,
+        Condesa, Roma Norte) are the same blocks the social event circuit is
+        primarily based. The overlap demonstrates acute impact of platforms on these
+        neighborhoods.</p>
+      </div>
+      <div class="block">
+        <p class="label">How to read it</p>
+        <p>The lighter shadings (on dark mode) reflect areas with the most density of
+        listings. Use the slider to compare quarters. Read the jump between March and
+        June 2026 as an event rather than a trend: the city hosted World Cup matches,
+        and listings rose about <span class="num">38%</span>.</p>
+      </div>
+      <div class="block limits">
+        <p class="label">Limitations</p>
+        <p>A listing is not a dwelling. Hosts run several, some are single rooms
+        rather than whole units, and duplicates are present in the data; the
+        entire-home count is the closer proxy. The data are scraped, so coverage
+        reflects what was publicly visible that day. And the series begins in late
+        2025, well after the pandemic-era rise, so this layer shows the recent state
+        of the market rather than how it got there.</p>
+      </div>
+    </div>
+  </details>
+
+  <details name="layer">
+    <summary>
+      <span class="caret"></span>
+      <span class="sum-text">
+        <span class="sum-title">What changed in commerce</span>
+        <span class="sum-dek">Cafés gained or lost between the 2019 and 2025 business registers</span>
+      </span>
+      <span class="ramp" aria-hidden="true">
+        <i style="background:var(--d1)"></i><i style="background:var(--d2)"></i>
+        <i style="background:var(--d3)"></i><i style="background:var(--d4)"></i>
+        <i style="background:var(--d5)"></i>
+      </span>
+    </summary>
+    <div class="body">
+      <div class="block">
+        <p class="label">What's on the map</p>
+        <p>The change in the number of cafés in each postal code between the November
+        2019 and May 2025 editions of
+        <a href="https://www.inegi.org.mx/app/descarga/?ti=6" target="_blank" rel="noopener">INEGI</a>'s
+        national business register, the DENUE. The slider shows changes from
+        year-to-year.</p>
+      </div>
+      <div class="block">
+        <p class="label">What it says about platformization</p>
+        <p>Cafés are the physical plant of platform-mediated work. Remote workers
+        needs somewhere to sit with wifi a and in Mexico City cafés absorb some of
+        that demand. Economists studying neighborhood change have argued that the
+        composition of local commerce moves before rents and demographics do
+        (<a href="https://www.aeaweb.org/doi/10.1257/pandp.20181034" target="_blank" rel="noopener">Glaeser, Kim and Luca 2018</a>),
+        which makes this the earliest visible signal on the map. They call it a
+        leading indicator, while being explicit that it predicts change rather than
+        causing it: businesses respond to a shifting neighborhood at least as much as
+        they drive one.</p>
+      </div>
+      <div class="block">
+        <p class="label">How to read it</p>
+        <p>The color runs either side of zero: warm where cafés were added, cool
+        where they were lost, pale in the middle. At the left-hand end of the slider
+        the baseline is being compared with itself, so every polygon reads zero.
+        Switch the measure to a level, such as cafés per km², to read a single
+        edition on its own.</p>
+      </div>
+      <div class="block limits">
+        <p class="label">Limitations</p>
+        <p>The DENUE is a directory INEGI re-canvasses, not a register of openings
+        and closings: a net change of +20 does not mean twenty cafés opened, it means
+        twenty more were found. It undercounts informal commerce, which biases the
+        comparison against street and market trade far harder than against cafés. And
+        INEGI did not substantially re-canvass Mexico City between 2021 and 2023, so
+        the middle of the series is flat as a consequence.</p>
+      </div>
+    </div>
+  </details>
+
+  <details name="layer">
+    <summary>
+      <span class="caret"></span>
+      <span class="sum-text">
+        <span class="sum-title">Where buildings were renewed</span>
+        <span class="sum-dek">Share of built surface dated 2010 or later in the city cadastre (the city's official list of land and buildings)</span>
+      </span>
+      <span class="ramp" aria-hidden="true">
+        <i style="background:var(--r1)"></i><i style="background:var(--r2)"></i>
+        <i style="background:var(--r3)"></i><i style="background:var(--r4)"></i>
+        <i style="background:var(--r5)"></i>
+      </span>
+    </summary>
+    <div class="body">
+      <div class="block">
+        <p class="label">What's on the map</p>
+        <p>The share of each postal code's built surface whose cadastral record is
+        dated 2010 or later, from the city's 2021
+        <a href="https://sig.cdmx.gob.mx/datos/descarga" target="_blank" rel="noopener">catastro</a>
+        (list of buildings, where they sit, its boundaries, how big it is, what's
+        built on it, and what the state assesses it to be worth).</p>
+      </div>
+      <div class="block">
+        <p class="label">What it says about platformization</p>
+        <p>Where a unit earns more by the night than by the month, renovation and
+        conversion follow. The cadastre records these new builds, renovations, and
+        floors added.</p>
+      </div>
+      <div class="block">
+        <p class="label">How to read it</p>
+        <p>This counts floor space, not buildings. One big new development changes an
+        area's color more than a dozen small remodels do.</p>
+      </div>
+      <div class="block limits">
+        <p class="label">Limitations</p>
+        <p>The field records construction <em>or the last remodel</em>, which is what
+        makes it a renovation signal but makes it useless as a map of building age
+        (i.e. a 1920s house renovated in 2015 reads as 2015). The snapshot is from
+        2021, so the most recent wave is not included. Land values in this layer run
+        below market and are revalued on the city's own schedule, so read them as
+        relative, not as current prices.</p>
+      </div>
+    </div>
+  </details>
+
+  <details name="layer">
+    <summary>
+      <span class="caret"></span>
+      <span class="sum-text">
+        <span class="sum-title">What businesses are findable on social media</span>
+        <span class="sum-dek">Facebook and Instagram pages per business on the official register</span>
+      </span>
+      <span class="ramp" aria-hidden="true">
+        <i style="background:var(--r1)"></i><i style="background:var(--r2)"></i>
+        <i style="background:var(--r3)"></i><i style="background:var(--r4)"></i>
+        <i style="background:var(--r5)"></i>
+      </span>
+    </summary>
+    <div class="body">
+      <div class="block">
+        <p class="label">What's on the map</p>
+        <p>Business pages on Facebook and Instagram, counted against the businesses
+        on the official register. The source is
+        <a href="https://overturemaps.org/" target="_blank" rel="noopener">Overture Maps</a>,
+        which in Mexico City is <span class="num">94%</span> Meta data. Further
+        measures break the same ratio down by trade: food and drink, retail, health
+        care, sport.</p>
+      </div>
+      <div class="block">
+        <p class="label">What it says about platformization</p>
+        <p>This measures platformization itself rather than one of its effects.
+        Someone who arrived three months ago finds places through Instagram and
+        Google Maps. A business that is not there is, for that customer, not there
+        at all — however long it has stood on the corner. The layer shows where the
+        city has been made legible to that way of looking, and where it has not.</p>
+      </div>
+      <div class="block">
+        <p class="label">How to read it</p>
+        <p>It is a ratio between two different counts, not a percentage, and it can
+        exceed <span class="num">1</span>. A low score means invisible to the apps,
+        not empty of commerce — frequently the opposite. Read the per-trade measures
+        alongside the overall one, because they disagree: Doctores scores
+        <span class="num">0.44</span> overall and <span class="num">1.73</span> on
+        health care, because it is the hospital district and clinics market
+        themselves on Facebook. The headline figure hides that entirely.</p>
+      </div>
+      <div class="block limits">
+        <p class="label">Limitations</p>
+        <p>Meta pages include duplicates, home-based sellers and entries that are not
+        businesses; the official register undercounts informal commerce. There is
+        also no time dimension. The records carry no creation date, so this layer can
+        show the current state and not the change.</p>
+      </div>
+    </div>
+  </details>
+
+  <div class="closing">
+    <h2>Three things that apply to every layer</h2>
+    <ul>
+      <li><strong>The shading is by postal code, not colonia.</strong> Postal codes
+      are a postal convenience and they cut across the neighborhood boundaries people
+      actually use. A polygon named Roma Norte is the postal code that mostly covers
+      it.</li>
+      <li><strong>The layers are not a time series.</strong> They were measured in
+      different years with different instruments (a 2021 cadastre, a 2025 business
+      register, a 2026 scrape). Reading them against one another is useful, but be
+      cognizant of the disjointedness in timescales.</li>
+      <li><strong>Correlation here is geographic, not causal.</strong> Cafés,
+      listings and renovations concentrate in the same few colonias because those
+      colonias were already central, well-served and desirable. Separating what
+      platforms did from what was already underway is the work the map sets up, but
+      doesn't finish. If you have ideas about how to run this data meaningfully in
+      relation to each other, feel free to reach out to discuss a possible
+      collaboration.</li>
+    </ul>
+  </div>
+</div>
